@@ -1,30 +1,99 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+const statsBar = document.getElementById("statsBar");
 
-// Globālie spēles iestatījumi
+// Spēles stāvokļi: "MENU", "LEVEL_SELECT", "PLAYING"
+let gameState = "MENU"; 
 const groundY = 370;
-let gameSpeed = 7.5;
-let score = 0;
-let highScore = localStorage.getItem("pepeDashHighScore") || 0;
+let gameSpeed = 7;
+let currentLevel = null;
+let currentLevelIndex = 0;
+let distanceTraveled = 0;
 let isGameOver = false;
+let isVictory = false;
 let gameMode = "CUBE"; // "CUBE" vai "SHIP"
 let inputPressed = false;
 
-// Masīvi objektiem
 let obstacles = [];
 let portals = [];
-let particles = []; // Trail efekts
+let particles = [];
 let frameCount = 0;
 
-// Spēlētāja (Pepe) fizika un vizuālais tēls
+// LĪMEŅU DATI (Precīzi definēti dzeloņi un portāli pēc X koordinātām)
+const levels = [
+    {
+        name: "1. STEREO MADNESS",
+        difficulty: "Easy",
+        bgColor: "#0f051d",
+        floorColor: "#00ffff",
+        length: 2000, // Līmeņa garums pikseļos
+        mode: "CUBE",
+        // Šķēršļu izvietojums (x: kur tas parādās kartē)
+        obstacles: [
+            { x: 600, type: "spike" },
+            { x: 900, type: "spike" },
+            { x: 1200, type: "double-spike" },
+            { x: 1500, type: "spike" },
+            { x: 1700, type: "spike" }
+        ],
+        portals: []
+    },
+    {
+        name: "2. BACK ON TRACK",
+        difficulty: "Normal",
+        bgColor: "#111a2e",
+        floorColor: "#e600ff",
+        length: 2500,
+        mode: "CUBE",
+        obstacles: [
+            { x: 500, type: "spike" },
+            { x: 800, type: "double-spike" },
+            { x: 1100, type: "spike" },
+            { x: 1350, type: "block", y: groundY - 40, w: 40, h: 40 }, // jālēc uz bloka
+            { x: 1390, type: "spike", y: groundY }, // dzelonis uzreiz aiz bloka
+            { x: 1700, type: "double-spike" },
+            { x: 2000, type: "spike" }
+        ],
+        portals: []
+    },
+    {
+        name: "3. SHIP MAYHEM",
+        difficulty: "Hard",
+        bgColor: "#2a0511",
+        floorColor: "#ff3300",
+        length: 2800,
+        mode: "SHIP", // Šis līmenis sākas uzreiz kuģīša režīmā
+        obstacles: [
+            { x: 500, type: "block", y: 40, w: 50, h: 100 },      // Griestu šķērslis
+            { x: 800, type: "block", y: groundY - 100, w: 50, h: 100 }, // Grīdas šķērslis
+            { x: 1100, type: "block", y: 150, w: 40, h: 100 },    // Vidus šķērslis
+            { x: 1400, type: "block", y: 40, w: 60, h: 120 },
+            { x: 1700, type: "block", y: groundY - 120, w: 60, h: 120 },
+            { x: 2100, type: "block", y: 130, w: 50, h: 140 },
+            { x: 2400, type: "spike", y: groundY }
+        ],
+        portals: []
+    }
+];
+
+// Pogas izvēlnēm (X, Y, Platums, Augstums)
+const buttons = {
+    play: { x: 350, y: 220, w: 200, h: 60, text: "START" },
+    prev: { x: 100, y: 220, w: 80, h: 60, text: "<" },
+    next: { x: 720, y: 220, w: 80, h: 60, text: ">" },
+    select: { x: 325, y: 320, w: 250, h: 50, text: "SPĒLĒT LĪMENI" },
+    back: { x: 30, y: 30, w: 100, h: 40, text: "ATPAKAĻ" }
+};
+
+// Spēlētājs (Pepe)
 const player = {
     x: 150,
     y: groundY - 40,
     width: 40,
     height: 40,
     velocity: 0,
-    gravity: 0.7,      // Cube gravitācija
-    shipGravity: 0.35,  // Ship gravitācija
+    gravity: 0.7,
+    shipGravity: 0.35,
     jumpForce: -12,
     shipFlyForce: -0.8,
     grounded: false,
@@ -32,55 +101,31 @@ const player = {
 
     update() {
         if (gameMode === "CUBE") {
-            // Cube fizika
             this.velocity += this.gravity;
             this.y += this.velocity;
-
             if (this.y + this.height >= groundY) {
                 this.y = groundY - this.height;
                 this.velocity = 0;
                 this.grounded = true;
-                
-                // Nobloķē rotāciju precīzi uz tuvāko 90 grādu leņķi pie zemes
                 this.rotation = Math.round(this.rotation / (Math.PI / 2)) * (Math.PI / 2);
             } else {
-                this.rotation += 0.09; // Rotē, kamēr gaisā
+                this.rotation += 0.09;
                 this.grounded = false;
             }
         } else if (gameMode === "SHIP") {
-            // Ship vadība (turot pogu, lido uz augšu, atlaižot krīt)
-            if (inputPressed) {
-                this.velocity += this.shipFlyForce;
-            } else {
-                this.velocity += this.shipGravity;
-            }
-
-            // Ātruma ierobežotājs lidaparātam
+            if (inputPressed) this.velocity += this.shipFlyForce;
+            else this.velocity += this.shipGravity;
+            
             this.velocity = Math.max(-6, Math.min(6, this.velocity));
             this.y += this.velocity;
 
-            // Griestu un grīdas barjeras kuģītim
-            if (this.y + this.height >= groundY) {
-                this.y = groundY - this.height;
-                this.velocity = 0;
-            }
-            if (this.y <= 40) {
-                this.y = 40;
-                this.velocity = 0;
-            }
-
-            // Kuģītis nedaudz sasveras atkarībā no ātruma
+            if (this.y + this.height >= groundY) { this.y = groundY - this.height; this.velocity = 0; }
+            if (this.y <= 40) { this.y = 40; this.velocity = 0; }
             this.rotation = this.velocity * 0.05;
         }
 
-        // Pievieno astes (trail) daļiņas
         if (frameCount % 2 === 0) {
-            particles.push({
-                x: this.x,
-                y: this.y + this.height / 2 + (Math.random() * 10 - 5),
-                size: Math.random() * 6 + 4,
-                alpha: 1
-            });
+            particles.push({ x: this.x, y: this.y + this.height / 2, size: Math.random() * 6 + 4, alpha: 1 });
         }
     },
 
@@ -89,260 +134,320 @@ const player = {
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
         ctx.rotate(this.rotation);
 
-        if (gameMode === "CUBE") {
-            // Zaļš Pepe kubiņš
-            ctx.fillStyle = "#4CAF50";
-            ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
-            
-            // Acis un mutīte
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(-12, -12, 10, 10); ctx.fillRect(2, -12, 10, 10);
-            ctx.fillStyle = "#000";
-            ctx.fillRect(-8, -9, 4, 4); ctx.fillRect(6, -9, 4, 4);
-            ctx.fillStyle = "#ff3333";
-            ctx.fillRect(-10, 4, 20, 4);
-        } else {
-            // Pepe kuģīša režīms (GD stila kuģis ar Pepe galvu virsū)
-            // Kuģa korpuss
-            ctx.fillStyle = "#00ffff";
-            ctx.beginPath();
-            ctx.moveTo(-20, 10);
-            ctx.lineTo(20, 15);
-            ctx.lineTo(10, -5);
-            ctx.lineTo(-15, -5);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Pepe galva kuģīša iekšpusē
-            ctx.fillStyle = "#4CAF50";
-            ctx.fillRect(-10, -15, 20, 15);
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(-6, -13, 6, 6); ctx.fillRect(1, -13, 6, 6);
-            ctx.fillStyle = "#000";
-            ctx.fillRect(-4, -11, 2, 2); ctx.fillRect(3, -11, 2, 2);
-        }
+        ctx.fillStyle = "#4CAF50";
+        ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(-12, -12, 10, 10); ctx.fillRect(2, -12, 10, 10);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(-8, -9, 4, 4); ctx.fillRect(6, -9, 4, 4);
+        ctx.fillStyle = "#ff3333";
+        ctx.fillRect(-10, 4, 20, 4);
 
         ctx.restore();
     }
 };
 
-// Ievades kontroles (Peles un tastatūras apvienošana)
-function handleStart() {
-    inputPressed = true;
-    if (isGameOver) {
-        resetGame();
-    } else if (gameMode === "CUBE" && player.grounded) {
-        player.velocity = player.jumpForce;
-        player.grounded = false;
-    }
-}
-function handleEnd() {
-    inputPressed = false;
-}
+// Klikšķu apstrāde izvēlnēs un spēlē
+canvas.addEventListener("mousedown", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
 
-window.addEventListener("keydown", (e) => { if (e.code === "Space" || e.code === "ArrowUp") handleStart(); });
-window.addEventListener("keyup", (e) => { if (e.code === "Space" || e.code === "ArrowUp") handleEnd(); });
-canvas.addEventListener("mousedown", handleStart);
-canvas.addEventListener("mouseup", handleEnd);
-
-// Līmeņa ģenerēšanas ritms (kartes loģika)
-function buildLevel() {
-    frameCount++;
-    
-    // Ģenerē šķēršļus balstoties uz laiku
-    if (frameCount % 90 === 0 && Math.random() > 0.3) {
-        let r = Math.random();
-        if (r < 0.5) {
-            // Viens dzelonis
-            obstacles.push({ x: canvas.width, y: groundY, width: 30, height: 35, type: "spike" });
-        } else if (r < 0.8 && gameMode === "CUBE") {
-            // Dubults dzelonis
-            obstacles.push({ x: canvas.width, y: groundY, width: 60, height: 35, type: "double-spike" });
-        } else if (gameMode === "SHIP") {
-            // Sienas bloks augšā vai apakšā kuģītim
-            let blockY = Math.random() > 0.5 ? groundY - 50 : 40;
-            obstacles.push({ x: canvas.width, y: blockY, width: 40, height: 50, type: "block" });
+    if (gameState === "MENU") {
+        if (checkClick(mouseX, mouseY, buttons.play)) {
+            gameState = "LEVEL_SELECT";
+        }
+    } 
+    else if (gameState === "LEVEL_SELECT") {
+        if (checkClick(mouseX, mouseY, buttons.prev)) {
+            currentLevelIndex = (currentLevelIndex - 1 + levels.length) % levels.length;
+        }
+        else if (checkClick(mouseX, mouseY, buttons.next)) {
+            currentLevelIndex = (currentLevelIndex + 1) % levels.length;
+        }
+        else if (checkClick(mouseX, mouseY, buttons.select)) {
+            startLevel(currentLevelIndex);
+        }
+        else if (checkClick(mouseX, mouseY, buttons.back)) {
+            gameState = "MENU";
+        }
+    } 
+    else if (gameState === "PLAYING") {
+        inputPressed = true;
+        if (isGameOver || isVictory) {
+            resetLevel();
+        } else if (gameMode === "CUBE" && player.grounded) {
+            player.velocity = player.jumpForce;
+            player.grounded = false;
         }
     }
+});
 
-    // Portālu loģika (Maina režīmus ik pēc noteikta laika)
-    if (frameCount === 400) {
-        portals.push({ x: canvas.width, y: groundY - 100, width: 30, height: 120, toMode: "SHIP", color: "#ff00ff" });
+canvas.addEventListener("mouseup", () => { inputPressed = false; });
+
+// Klavatūras atbalsts spēlei
+window.addEventListener("keydown", (e) => {
+    if (e.code === "Space" || e.code === "ArrowUp") {
+        inputPressed = true;
+        if (gameState === "PLAYING") {
+            if (isGameOver || isVictory) resetLevel();
+            else if (gameMode === "CUBE" && player.grounded) {
+                player.velocity = player.jumpForce;
+                player.grounded = false;
+            }
+        }
     }
-    if (frameCount === 900) {
-        portals.push({ x: canvas.width, y: groundY - 100, width: 30, height: 120, toMode: "CUBE", color: "#00ff00" });
-    }
-    
-    // Bezgalīgā cikla restarts līmeņa ritmam
-    if (frameCount > 1300) frameCount = 0;
+});
+window.addEventListener("keyup", (e) => { if (e.code === "Space" || e.code === "ArrowUp") inputPressed = false; });
+
+function checkClick(mx, my, btn) {
+    return mx >= btn.x && mx <= btn.x + btn.w && my >= btn.y && my <= btn.y + btn.h;
 }
 
-function resetGame() {
-    obstacles = [];
-    portals = [];
-    particles = [];
-    score = 0;
+// Līmeņa palaišana
+function startLevel(index) {
+    gameState = "PLAYING";
+    statsBar.style.display = "flex";
+    currentLevel = JSON.parse(JSON.stringify(levels[index])); // dziļā kopija līmeņa datiem
+    document.getElementById("levelNameText").innerText = currentLevel.name;
+    resetLevel();
+}
+
+function resetLevel() {
+    distanceTraveled = 0;
     frameCount = 0;
-    gameMode = "CUBE";
+    isGameOver = false;
+    isVictory = false;
+    gameMode = currentLevel.mode;
     player.y = groundY - player.height;
     player.velocity = 0;
     player.rotation = 0;
-    isGameOver = false;
+    particles = [];
+    
+    // Sagatavo šķēršļus no līmeņa datiem
+    obstacles = currentLevel.obstacles.map(o => ({
+        x: o.x,
+        y: o.y || groundY,
+        width: o.w || 30,
+        height: o.h || 35,
+        type: o.type
+    }));
 }
 
-// Spēles matemātiskais stāvoklis (Update)
+// Spēles matemātika (Update)
 function update() {
-    if (isGameOver) return;
+    if (gameState !== "PLAYING" || isGameOver || isVictory) return;
 
-    buildLevel();
+    frameCount++;
+    distanceTraveled += gameSpeed;
+    
     player.update();
 
-    // Atjaunina UI datus
-    score += 0.1;
-    document.getElementById("scoreText").innerText = `ATTĀLUMS: ${Math.floor(score)}%`;
-    document.getElementById("modeText").innerText = `MODE: ${gameMode}`;
-    document.getElementById("highScoreText").innerText = `BEST: ${Math.floor(highScore)}%`;
+    // Progresa aprēķins procentos
+    let progress = Math.min(100, Math.floor((distanceTraveled / currentLevel.length) * 100));
+    document.getElementById("scoreText").innerText = `PROGRESS: ${progress}%`;
+    
+    let savedHighScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
+    document.getElementById("highScoreText").innerText = `BEST: ${savedHighScore}%`;
 
-    // 1. Astes daļiņu efekts (Trail)
+    // Uzvaras pārbaude (ja sasniegts līmeņa gals)
+    if (distanceTraveled >= currentLevel.length) {
+        isVictory = true;
+        localStorage.setItem(`pepeLevel_${currentLevelIndex}`, 100);
+        return;
+    }
+
+    // Astes daļiņas
     for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].x -= gameSpeed - 2;
         particles[i].alpha -= 0.04;
         if (particles[i].alpha <= 0) particles.splice(i, 1);
     }
 
-    // 2. Portālu kustība un sadursme
-    for (let i = portals.length - 1; i >= 0; i--) {
-        let p = portals[i];
-        p.x -= gameSpeed;
-
-        // Pārbauda vai spēlētājs izskrien cauri portālam
-        if (player.x + player.width > p.x && player.x < p.x + p.width && player.y + player.height > p.y && player.y < p.y + p.height) {
-            gameMode = p.toMode;
-            portals.splice(i, 1); // Dzēš pēc ieiešanas
-            continue;
-        }
-        if (p.x + p.width < 0) portals.splice(i, 1);
-    }
-
-    // 3. Šķēršļu kustība un sadursmes pārbaude
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-        let o = obstacles[i];
+    // Šķēršļu pārbaude un virzība
+    for (let o of obstacles) {
         o.x -= gameSpeed;
 
-        // Hitbox sadursme (AABB ar nedaudz drošības buferi)
-        let hitX = player.x + 5 < o.x + o.width && player.x + player.width - 5 > o.x;
+        // Sadursmes modelis (Hitbox)
+        let hitX = player.x + 4 < o.x + o.width && player.x + player.width - 4 > o.x;
         let hitY = false;
 
         if (o.type === "spike" || o.type === "double-spike") {
-            hitY = player.y + player.height > o.y - o.height && player.y + 5 < o.y;
+            hitY = player.y + player.height > o.y - o.height && player.y + 4 < o.y;
         } else if (o.type === "block") {
             hitY = player.y < o.y + o.height && player.y + player.height > o.y;
         }
 
         if (hitX && hitY) {
             isGameOver = true;
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem("pepeDashHighScore", highScore);
+            if (progress > savedHighScore) {
+                localStorage.setItem(`pepeLevel_${currentLevelIndex}`, progress);
+            }
+        }
+    }
+}
+
+// Pogas vizuālais zīmējums
+function drawButton(btn, color = "#00ffff") {
+    ctx.fillStyle = "#111";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+    ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 16px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(btn.text, btn.x + btn.w / 2, btn.y + btn.h / 2 + 6);
+    ctx.textAlign = "start";
+}
+
+// Vizuālā renderēšana (Draw)
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (gameState === "MENU") {
+        statsBar.style.display = "none";
+        // Izvēlnes fons
+        ctx.fillStyle = "#090414";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#4CAF50";
+        ctx.font = "bold 50px Arial";
+        ctx.fillText("PEPE DASH", 310, 140);
+
+        drawButton(buttons.play, "#4CAF50");
+    } 
+    
+    else if (gameState === "LEVEL_SELECT") {
+        ctx.fillStyle = "#070c1f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 28px Arial";
+        ctx.fillText("IZVĒLIES LĪMENI", 330, 100);
+
+        // Pašreizējā līmeņa info logs
+        let lvl = levels[currentLevelIndex];
+        ctx.fillStyle = "#111a3a";
+        ctx.fillRect(250, 150, 400, 140);
+        ctx.strokeStyle = "#00ffff";
+        ctx.strokeRect(250, 150, 400, 140);
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "20px Arial";
+        ctx.fillText(lvl.name, 280, 190);
+        
+        ctx.fillStyle = lvl.difficulty === "Hard" ? "#ff3333" : (lvl.difficulty === "Normal" ? "#ffcc00" : "#33ff33");
+        ctx.font = "16px Arial";
+        ctx.fillText(`Grūtība: ${lvl.difficulty}`, 280, 225);
+
+        let savedScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
+        ctx.fillStyle = "#00ffff";
+        ctx.fillText(`Labākais rezultāts: ${savedScore}%`, 280, 260);
+
+        // Zīmē navigācijas pogas
+        drawButton(buttons.prev);
+        drawButton(buttons.next);
+        drawButton(buttons.select, "#4CAF50");
+        drawButton(buttons.back, "#ff3333");
+    } 
+    
+    else if (gameState === "PLAYING") {
+        // Fonā izmanto līmeņa unikālo krāsu
+        ctx.fillStyle = currentLevel.bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid (Koordinātu tīkls)
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
+        let offset = (distanceTraveled) % 40;
+        for (let x = -offset; x < canvas.width; x += 40) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, groundY); ctx.stroke();
+        }
+
+        // Astes daļiņas
+        for (let p of particles) {
+            ctx.fillStyle = `rgba(78, 240, 93, ${p.alpha})`;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+
+        // Šķēršļu zīmēšana
+        ctx.fillStyle = "#ff0055";
+        for (let o of obstacles) {
+            if (o.type === "spike") {
+                ctx.beginPath();
+                ctx.moveTo(o.x, o.y);
+                ctx.lineTo(o.x + o.width / 2, o.y - o.height);
+                ctx.lineTo(o.x + o.width, o.y);
+                ctx.closePath();
+                ctx.fill();
+            } else if (o.type === "double-spike") {
+                let half = o.width / 2;
+                for(let j=0; j<2; j++) {
+                    let sx = o.x + (j*half);
+                    ctx.beginPath();
+                    ctx.moveTo(sx, o.y);
+                    ctx.lineTo(sx + half / 2, o.y - o.height);
+                    ctx.lineTo(sx + half, o.y);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            } else if (o.type === "block") {
+                ctx.fillStyle = "#444";
+                ctx.fillRect(o.x, o.y, o.width, o.height);
+                ctx.strokeStyle = "#666";
+                ctx.strokeRect(o.x, o.y, o.width, o.height);
+                ctx.fillStyle = "#ff0055"; // atgriež krāsu dzeloņiem
             }
         }
 
-        if (o.x + o.width < 0) obstacles.splice(i, 1);
-    }
-}
+        // Spēlētājs
+        player.draw();
 
-// Zīmēšana uz ekrāna (Render)
-function draw() {
-    // Fona krāsa (Geometry dash stila zilgans/tumšs fons)
-    ctx.fillStyle = gameMode === "CUBE" ? "#0f051d" : "#1a0511";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Zeme un griesti
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+        ctx.fillRect(0, 0, canvas.width, 40);
 
-    // Grid (Rūtiņu fons kā oriģinālā)
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
-    ctx.lineWidth = 1;
-    let gridSize = 40;
-    let offset = (frameCount * gameSpeed) % gridSize;
-    for (let x = -offset; x < canvas.width; x += gridSize) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, groundY); ctx.stroke();
-    }
+        ctx.strokeStyle = currentLevel.floorColor;
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
 
-    // Zīmē astes efektu
-    for (let p of particles) {
-        ctx.fillStyle = `rgba(78, 240, 93, ${p.alpha})`;
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-    }
+        // Game Over ekrāns
+        if (isGameOver) {
+            ctx.fillStyle = "rgba(0,0,0,0.85)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ff2a6d";
+            ctx.font = "bold 36px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("SPĒLE BEIGUSIES", canvas.width / 2, canvas.height / 2);
+            ctx.fillStyle = "#fff";
+            ctx.font = "18px Arial";
+            ctx.fillText("Klikšķini vai spied Space, lai mēģinātu vēlreiz", canvas.width / 2, canvas.height / 2 + 40);
+            ctx.textAlign = "start";
+        }
 
-    // Zīmē portālus
-    for (let p of portals) {
-        ctx.fillStyle = p.color;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = p.color;
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        ctx.shadowBlur = 0;
-    }
-
-    // Zīmē šķēršļus
-    for (let o of obstacles) {
-        if (o.type === "spike") {
-            ctx.fillStyle = "#ff0055";
-            ctx.beginPath();
-            ctx.moveTo(o.x, o.y);
-            ctx.lineTo(o.x + o.width / 2, o.y - o.height);
-            ctx.lineTo(o.x + o.width, o.y);
-            ctx.closePath();
-            ctx.fill();
-        } else if (o.type === "double-spike") {
-            ctx.fillStyle = "#ff0055";
-            ctx.beginPath();
-            ctx.moveTo(o.x, o.y);
-            ctx.lineTo(o.x + 15, o.y - o.height);
-            ctx.lineTo(o.x + 30, o.y);
-            ctx.lineTo(o.x + 45, o.y - o.height);
-            ctx.lineTo(o.x + 60, o.y);
-            ctx.closePath();
-            ctx.fill();
-        } else if (o.type === "block") {
-            ctx.fillStyle = "#333";
-            ctx.fillRect(o.x, o.y, o.width, o.height);
-            ctx.strokeStyle = "#555";
-            ctx.strokeRect(o.x, o.y, o.width, o.height);
+        // Uzvaras (Victory) ekrāns
+        if (isVictory) {
+            ctx.fillStyle = "rgba(0,0,0,0.85)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#33ff33";
+            ctx.font = "bold 40px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("LĪMENIS PABEIGTS! 100%", canvas.width / 2, canvas.height / 2);
+            ctx.fillStyle = "#fff";
+            ctx.font = "18px Arial";
+            ctx.fillText("Klikšķini, lai atgrieztos izvēlnē", canvas.width / 2, canvas.height / 2 + 50);
+            ctx.textAlign = "start";
         }
     }
-
-    // Zīmē spēlētāju
-    player.draw();
-
-    // Zīmē zemi un griestus
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
-    ctx.fillRect(0, 0, canvas.width, 40);
-
-    // Neon līnijas zemei un griestiem
-    ctx.strokeStyle = gameMode === "CUBE" ? "#00ffff" : "#ff00ff";
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
-
-    // Game Over ekrāns
-    if (isGameOver) {
-        ctx.fillStyle = "rgba(0,0,0,0.8)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#ff2a6d";
-        ctx.font = "bold 36px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("SPĒLE BEIGUSIES", canvas.width / 2, canvas.height / 2);
-        ctx.fillStyle = "#fff";
-        ctx.font = "18px Arial";
-        ctx.fillText("Klikšķini, lai mēģinātu vēlreiz", canvas.width / 2, canvas.height / 2 + 40);
-        ctx.textAlign = "start";
-    }
 }
 
-// Galvenais cikls
 function gameLoop() {
     update();
     draw();
