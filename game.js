@@ -23,91 +23,95 @@ let speedPortals = [];
 let particles = [];
 let frameCount = 0;
 
-// 6 RADIKĀLI ATŠĶIRĪGI LĪMEŅI
+// 6 PILNĪBĀ ATŠĶIRĪGI LĪMEŅI AR FIXĒTIEM IZMĒRIEM
 const levels = [
     {
         name: "1. STEREO MADNESS (Classic)", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 4500, mode: "CUBE", baseSpeed: 6.5,
         setup: function() {
-            obstacles.push({ x: 600, type: "spike" });
-            // Bloku kaskāde, uz kuras jāuzkāpj
-            obstacles.push({ x: 1000, type: "block", y: groundY - 40, w: 80, h: 40 });
-            obstacles.push({ x: 1080, type: "block", y: groundY - 80, w: 80, h: 80 });
-            obstacles.push({ x: 1300, type: "spike" });
+            // Klasiskie dzeloņi un bloki ar nodefinitu platumu (w) un augstumu (h)
+            obstacles.push({ x: 600, type: "spike", width: 30, height: 40 });
+            
+            // Bloku kaskāde, uz kuras var uzkāpt
+            obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 80, height: 40 });
+            obstacles.push({ x: 1080, type: "block", y: groundY - 80, width: 80, height: 80 });
+            obstacles.push({ x: 1400, type: "spike", width: 30, height: 40 });
             
             pads.push({ x: 1800, y: groundY, radius: 15 });
-            obstacles.push({ x: 1820, type: "spike" });
-            obstacles.push({ x: 2400, type: "double-spike" });
+            obstacles.push({ x: 1840, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 2400, type: "double-spike", width: 60, height: 40 });
+            
             coins.push({ x: 1080, y: groundY - 140 });
-            coins.push({ x: 3000, y: groundY - 80 });
+            coins.push({ x: 3200, y: groundY - 80 });
         }
     },
     {
         name: "2. TIME WARP (Slow Mo)", difficulty: "Normal", bgColor: "#1a2405", floorColor: "#aaff00", length: 4000, mode: "CUBE", baseSpeed: 4.5,
         setup: function() {
-            currentSpeed = 4.5;
-            for (let x = 600; x < 3500; x += 500) {
-                obstacles.push({ x: x, type: "block", y: groundY - 40, w: 60, h: 40 });
-                obstacles.push({ x: x + 20, type: "spike", y: groundY - 40 }); // dzelonis UZ bloka
-                if (x % 1000 === 0) coins.push({ x: x + 20, y: groundY - 100 });
+            // Lēns, bet blīvs līmenis
+            for (let x = 600; x < 3500; x += 600) {
+                obstacles.push({ x: x, type: "block", y: groundY - 40, width: 60, height: 40 });
+                obstacles.push({ x: x + 15, type: "spike", y: groundY - 40, width: 30, height: 40 }); // dzelonis uz bloka
+                if (x % 1200 === 0) coins.push({ x: x + 20, y: groundY - 100 });
             }
         }
     },
     {
         name: "3. NITRO DASH (Super Fast)", difficulty: "Hard", bgColor: "#300505", floorColor: "#ff0000", length: 6500, mode: "CUBE", baseSpeed: 11,
         setup: function() {
-            currentSpeed = 11;
-            obstacles.push({ x: 800, type: "spike" });
-            // Gari tilti no blokiem gaisā
-            obstacles.push({ x: 1200, type: "block", y: groundY - 60, w: 300, h: 60 });
-            obstacles.push({ x: 1800, type: "triple-spike" });
+            // Ļoti ātrs līmenis ar gariem blokiem
+            obstacles.push({ x: 800, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 1200, type: "block", y: groundY - 60, width: 300, height: 60 });
+            obstacles.push({ x: 1800, type: "triple-spike", width: 90, height: 40 });
             pads.push({ x: 2400, y: groundY, radius: 15 });
             coins.push({ x: 1350, y: groundY - 120 }); 
-            obstacles.push({ x: 3500, type: "block", y: groundY - 40, w: 200, h: 40 });
-            obstacles.push({ x: 4500, type: "triple-spike" });
+            obstacles.push({ x: 3500, type: "block", y: groundY - 40, width: 200, height: 40 });
+            obstacles.push({ x: 4500, type: "triple-spike", width: 90, height: 40 });
         }
     },
     {
         name: "4. TRAMPOLINE VALLEY", difficulty: "Hard", bgColor: "#05262b", floorColor: "#00ffcc", length: 5000, mode: "CUBE", baseSpeed: 7.5,
         setup: function() {
             pads.push({ x: 600, y: groundY, radius: 15 });
-            obstacles.push({ x: 750, type: "spike" });
+            obstacles.push({ x: 750, type: "spike", width: 30, height: 40 });
             
             // Tramplīns uzlikts uz augsta bloka
-            obstacles.push({ x: 1200, type: "block", y: groundY - 80, w: 80, h: 80 });
+            obstacles.push({ x: 1200, type: "block", y: groundY - 80, width: 80, height: 80 });
             pads.push({ x: 1240, y: groundY - 80, radius: 15 }); 
             
-            obstacles.push({ x: 1800, type: "block", y: groundY - 140, w: 80, h: 140 });
+            obstacles.push({ x: 1800, type: "block", y: groundY - 140, width: 80, height: 140 });
             coins.push({ x: 1240, y: groundY - 150 });
 
-            obstacles.push({ x: 2400, type: "triple-spike" });
+            obstacles.push({ x: 2400, type: "triple-spike", width: 90, height: 40 });
             pads.push({ x: 3000, y: groundY, radius: 15 });
         }
     },
     {
         name: "5. SHIP FLIGHT (Flappy Pepe)", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 6000, mode: "SHIP", baseSpeed: 7.5,
         setup: function() {
+            // Lidošanas labirints kuģītim
             for (let x = 600; x < 5500; x += 600) {
-                obstacles.push({ x: x, type: "block", y: 40, w: 60, h: 140 });
-                obstacles.push({ x: x + 300, type: "block", y: groundY - 140, w: 60, h: 140 });
-                if (x % 1200 === 0) coins.push({ x: x + 130, y: 100 });
+                obstacles.push({ x: x, type: "block", y: 40, width: 60, height: 140 });
+                obstacles.push({ x: x + 300, type: "block", y: groundY - 140, width: 60, height: 140 });
+                if (x % 1200 === 0) coins.push({ x: x + 130, y: 140 });
             }
         }
     },
     {
         name: "6. DEMONIC SPEEDWAY", difficulty: "Demon", bgColor: "#000000", floorColor: "#ff3300", length: 8000, mode: "CUBE", baseSpeed: 8,
         setup: function() {
-            obstacles.push({ x: 500, type: "triple-spike" });
-            obstacles.push({ x: 1000, type: "block", y: groundY - 40, w: 120, h: 40 });
-            obstacles.push({ x: 1600, type: "air-spike", y: groundY - 60 });
+            obstacles.push({ x: 500, type: "triple-spike", width: 90, height: 40 });
+            obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 120, height: 40 });
+            obstacles.push({ x: 1600, type: "air-spike", y: groundY - 60, width: 30, height: 40 });
             
-            speedPortals.push({ x: 2200, y: groundY - 100, w: 30, h: 100, targetSpeed: 11, toMode: "SHIP" });
+            // Ātruma/Režīma portāls
+            speedPortals.push({ x: 2200, y: groundY - 140, w: 40, h: 140, targetSpeed: 11, toMode: "SHIP" });
             
-            obstacles.push({ x: 2800, type: "block", y: 40, w: 50, h: 160 });
-            obstacles.push({ x: 3300, type: "block", y: groundY - 160, w: 50, h: 160 });
+            obstacles.push({ x: 2800, type: "block", y: 40, width: 60, height: 160 });
+            obstacles.push({ x: 3300, type: "block", y: groundY - 160, width: 60, height: 160 });
             coins.push({ x: 3800, y: 200 });
             
-            speedPortals.push({ x: 5500, y: groundY - 100, w: 30, h: 100, targetSpeed: 7.5, toMode: "CUBE" });
-            obstacles.push({ x: 6200, type: "triple-spike" });
+            speedPortals.push({ x: 5500, y: groundY - 140, w: 40, h: 140, targetSpeed: 7.5, toMode: "CUBE" });
+            obstacles.push({ x: 6200, type: "triple-spike", width: 90, height: 40 });
         }
     }
 ];
@@ -221,7 +225,6 @@ function resetLevel() {
     gameMode = currentLevel.mode; currentSpeed = currentLevel.baseSpeed;
     player.y = groundY - player.height; player.velocity = 0; player.rotation = 0; player.grounded = true; particles = [];
     
-    // Šeit masīvi tiek pilnībā iztīrīti un ielādēti svaigi dati no līmeņa struktūras
     obstacles = []; pads = []; coins = []; speedPortals = [];
     currentLevel.setup(); 
 }
@@ -244,7 +247,7 @@ function update() {
 
             if (hitX && hitY) {
                 let overlapY = (player.y + player.height) - o.y;
-                if (overlapY <= player.velocity + 2 && player.velocity >= 0 && gameMode === "CUBE") {
+                if (overlapY <= player.velocity + 3 && player.velocity >= 0 && gameMode === "CUBE") {
                     player.y = o.y - player.height;
                     player.velocity = 0;
                     player.grounded = true;
@@ -254,8 +257,14 @@ function update() {
                 }
             }
         } else {
+            // Sadursme ar dzeloņiem
             let hitX = player.x + 6 < o.x + o.width && player.x + player.width - 6 > o.x;
-            let hitY = player.y + player.height > o.y - o.height && player.y + 4 < o.y;
+            let hitY = false;
+            if (o.type === "air-spike") {
+                hitY = player.y + player.height > o.y - o.height && player.y < o.y;
+            } else {
+                hitY = player.y + player.height > groundY - o.height && player.y < groundY;
+            }
             if (hitX && hitY) {
                 isGameOver = true;
             }
@@ -293,7 +302,7 @@ function update() {
         if (particles[i].alpha <= 0) particles.splice(i, 1);
     }
 
-    // Tramplīni (Jump Pads)
+    // Tramplīni
     for (let p of pads) {
         p.x -= currentSpeed;
         if (player.x + player.width > p.x - p.radius && player.x < p.x + p.radius && player.y + player.height >= p.y - 12 && player.y < p.y) {
@@ -387,12 +396,12 @@ function draw() {
         // Šķēršļu un bloku zīmēšana
         for (let o of obstacles) {
             if (o.type === "spike") {
-                ctx.fillStyle = "#ff0055"; ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + o.width / 2, o.y - o.height); ctx.lineTo(o.x + o.width, o.y); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = "#ff0055"; ctx.beginPath(); ctx.moveTo(o.x, groundY); ctx.lineTo(o.x + o.width / 2, groundY - o.height); ctx.lineTo(o.x + o.width, groundY); ctx.closePath(); ctx.fill();
             } else if (o.type === "double-spike" || o.type === "triple-spike") {
                 ctx.fillStyle = "#ff0055"; let count = o.type === "double-spike" ? 2 : 3; let w = o.width / count;
                 for(let j=0; j<count; j++) {
                     let sx = o.x + (j*w);
-                    ctx.beginPath(); ctx.moveTo(sx, o.y); ctx.lineTo(sx + w / 2, o.y - o.height); ctx.lineTo(sx + w, o.y); ctx.closePath(); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(sx, groundY); ctx.lineTo(sx + w / 2, groundY - o.height); ctx.lineTo(sx + w, groundY); ctx.closePath(); ctx.fill();
                 }
             } else if (o.type === "air-spike") {
                 ctx.fillStyle = "#ffcc00"; ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + o.width / 2, o.y - o.height); ctx.lineTo(o.x + o.width, o.y); ctx.closePath(); ctx.fill();
@@ -406,7 +415,7 @@ function draw() {
 
         ctx.fillStyle = "#000"; ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY); ctx.fillRect(0, 0, canvas.width, 40);
         ctx.strokeStyle = currentLevel.floorColor; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); stroke();
         ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
 
         drawButton(buttons.pauseBtn, "#555");
