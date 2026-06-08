@@ -13,8 +13,8 @@ let gameMode = "CUBE";
 let inputPressed = false;
 
 // Spēles mehānikas mainīgie
-let currentSpeed = 7; // Mainās atkarībā no ātruma portāliem
-let levelCoinsCollected = 0; // Monētas pašreizējā mēģinājumā
+let currentSpeed = 7; 
+let levelCoinsCollected = 0; 
 
 let obstacles = [];
 let pads = [];
@@ -28,67 +28,67 @@ const levels = [
     {
         name: "1. STEREO MADNESS (Classic)", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 4500, mode: "CUBE", baseSpeed: 6.5,
         setup: function() {
-            // Klasisks ritms, parādās pirmie Tramplīni (Pads)
-            pads.push({ x: 1200, y: groundY, radius: 15 });
-            pads.push({ x: 2200, y: groundY, radius: 15 });
-            obstacles.push({ x: 600, type: "spike" }, { x: 900, type: "spike" }, { x: 1210, type: "spike" }); // spike uzreiz aiz pad
-            obstacles.push({ x: 1600, type: "double-spike" }, { x: 2600, type: "triple-spike" });
-            coins.push({ x: 1800, y: groundY - 80 }, { x: 3200, y: groundY - 80 });
+            obstacles.push({ x: 600, type: "spike" });
+            // Bloku kaskāde, uz kuras jāuzkāpj
+            obstacles.push({ x: 1000, type: "block", y: groundY - 40, w: 80, h: 40 });
+            obstacles.push({ x: 1080, type: "block", y: groundY - 80, w: 80, h: 80 });
+            obstacles.push({ x: 1300, type: "spike" });
+            
+            pads.push({ x: 1800, y: groundY, radius: 15 });
+            obstacles.push({ x: 1820, type: "spike" });
+            obstacles.push({ x: 2400, type: "double-spike" });
+            coins.push({ x: 1080, y: groundY - 140 });
+            coins.push({ x: 3000, y: groundY - 80 });
         }
     },
     {
         name: "2. TIME WARP (Slow Mo)", difficulty: "Normal", bgColor: "#1a2405", floorColor: "#aaff00", length: 4000, mode: "CUBE", baseSpeed: 4.5,
         setup: function() {
-            // ĻOTI LĒNS LĪMENIS, bet šķēršļi ir salikti ļoti tuvu un blīvi (nepieciešama micro-precizitāte)
             currentSpeed = 4.5;
-            for (let x = 600; x < 3500; x += 400) {
-                obstacles.push({ x: x, type: "spike" });
-                obstacles.push({ x: x + 150, type: "block", y: groundY - 40, w: 40, h: 40 });
-                if (x % 800 === 0) coins.push({ x: x + 170, y: groundY - 100 });
+            for (let x = 600; x < 3500; x += 500) {
+                obstacles.push({ x: x, type: "block", y: groundY - 40, w: 60, h: 40 });
+                obstacles.push({ x: x + 20, type: "spike", y: groundY - 40 }); // dzelonis UZ bloka
+                if (x % 1000 === 0) coins.push({ x: x + 20, y: groundY - 100 });
             }
         }
     },
     {
         name: "3. NITRO DASH (Super Fast)", difficulty: "Hard", bgColor: "#300505", floorColor: "#ff0000", length: 6500, mode: "CUBE", baseSpeed: 11,
         setup: function() {
-            // EXTREME ĀTRUMS (2x ātrāks par 1. līmeni). Reakcijas pārbaude.
             currentSpeed = 11;
-            obstacles.push({ x: 800, type: "spike" }, { x: 1400, type: "block", y: groundY - 40, w: 120, h: 40 });
-            pads.push({ x: 2000, y: groundY, radius: 15 });
-            obstacles.push({ x: 2600, type: "double-spike" }, { x: 3200, type: "triple-spike" });
-            coins.push({ x: 2000, y: groundY - 140 }); // Monēta augstu gaisā virs tramplīna
-            obstacles.push({ x: 4200, type: "spike" }, { x: 5000, type: "triple-spike" });
+            obstacles.push({ x: 800, type: "spike" });
+            // Gari tilti no blokiem gaisā
+            obstacles.push({ x: 1200, type: "block", y: groundY - 60, w: 300, h: 60 });
+            obstacles.push({ x: 1800, type: "triple-spike" });
+            pads.push({ x: 2400, y: groundY, radius: 15 });
+            coins.push({ x: 1350, y: groundY - 120 }); 
+            obstacles.push({ x: 3500, type: "block", y: groundY - 40, w: 200, h: 40 });
+            obstacles.push({ x: 4500, type: "triple-spike" });
         }
     },
     {
         name: "4. TRAMPOLINE VALLEY", difficulty: "Hard", bgColor: "#05262b", floorColor: "#00ffcc", length: 5000, mode: "CUBE", baseSpeed: 7.5,
         setup: function() {
-            // LĪMENIS BALSTĪTS UZ TRAMPLĪNIEM (Auto-jump ķēdes)
-            // Jālēc pa blokiem un tramplīniem, kas izmētāti gaisā
             pads.push({ x: 600, y: groundY, radius: 15 });
             obstacles.push({ x: 750, type: "spike" });
             
-            // Ķēde gaisā
-            obstacles.push({ x: 1200, type: "block", y: groundY - 60, w: 60, h: 60 });
-            pads.push({ x: 1230, y: groundY - 60, radius: 12 }); // pads uz bloka
+            // Tramplīns uzlikts uz augsta bloka
+            obstacles.push({ x: 1200, type: "block", y: groundY - 80, w: 80, h: 80 });
+            pads.push({ x: 1240, y: groundY - 80, radius: 15 }); 
             
-            obstacles.push({ x: 1800, type: "block", y: groundY - 120, w: 60, h: 120 });
-            coins.push({ x: 1830, y: groundY - 160 });
+            obstacles.push({ x: 1800, type: "block", y: groundY - 140, w: 80, h: 140 });
+            coins.push({ x: 1240, y: groundY - 150 });
 
             obstacles.push({ x: 2400, type: "triple-spike" });
             pads.push({ x: 3000, y: groundY, radius: 15 });
-            pads.push({ x: 3400, y: groundY, radius: 15 });
         }
     },
     {
-        name: "5. SHIP FLIGHT (Flappy Pepe)", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 6000, mode: "SHIP", baseSpeed: 7,
+        name: "5. SHIP FLIGHT (Flappy Pepe)", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 6000, mode: "SHIP", baseSpeed: 7.5,
         setup: function() {
-            // LABIRINTS KUĢĪTIM (Tikai lidošana, šauri gaiteņi)
             for (let x = 600; x < 5500; x += 600) {
-                // Alternējošas sienas augšā un apakšā
                 obstacles.push({ x: x, type: "block", y: 40, w: 60, h: 140 });
                 obstacles.push({ x: x + 300, type: "block", y: groundY - 140, w: 60, h: 140 });
-                // Monētas bīstamās vietās tuvu sienām
                 if (x % 1200 === 0) coins.push({ x: x + 130, y: 100 });
             }
         }
@@ -96,24 +96,18 @@ const levels = [
     {
         name: "6. DEMONIC SPEEDWAY", difficulty: "Demon", bgColor: "#000000", floorColor: "#ff3300", length: 8000, mode: "CUBE", baseSpeed: 8,
         setup: function() {
-            // DINAMISKAIS LĪMENIS: Sākas kā Cube, vidū transformējas par super-ātru kuģi!
             obstacles.push({ x: 500, type: "triple-spike" });
-            pads.push({ x: 1000, y: groundY, radius: 15 });
-            obstacles.push({ x: 1500, type: "air-spike", y: groundY - 60 });
+            obstacles.push({ x: 1000, type: "block", y: groundY - 40, w: 120, h: 40 });
+            obstacles.push({ x: 1600, type: "air-spike", y: groundY - 60 });
             
-            // SPEED PORTAL UN SHIP PORTAL REIZĒ pie 2200px attāluma
             speedPortals.push({ x: 2200, y: groundY - 100, w: 30, h: 100, targetSpeed: 11, toMode: "SHIP" });
             
-            // Kuģīša fāze ekstrēmā ātrumā
             obstacles.push({ x: 2800, type: "block", y: 40, w: 50, h: 160 });
             obstacles.push({ x: 3300, type: "block", y: groundY - 160, w: 50, h: 160 });
             coins.push({ x: 3800, y: 200 });
-            obstacles.push({ x: 4400, type: "block", y: 130, w: 80, h: 120 });
             
-            // Atpakaļ uz parastu ātrumu un kubu pie 5500px
             speedPortals.push({ x: 5500, y: groundY - 100, w: 30, h: 100, targetSpeed: 7.5, toMode: "CUBE" });
             obstacles.push({ x: 6200, type: "triple-spike" });
-            obstacles.push({ x: 7000, type: "spike" });
         }
     }
 ];
@@ -138,11 +132,21 @@ const player = {
 
     update() {
         if (gameMode === "CUBE") {
-            this.velocity += this.gravity; this.y += this.velocity;
+            this.velocity += this.gravity; 
+            this.y += this.velocity;
+
+            // Pārbauda sadursmi ar zemi
             if (this.y + this.height >= groundY) {
-                this.y = groundY - this.height; this.velocity = 0; this.grounded = true;
+                this.y = groundY - this.height; 
+                this.velocity = 0; 
+                this.grounded = true;
                 this.rotation = Math.round(this.rotation / (Math.PI / 2)) * (Math.PI / 2);
-            } else { this.rotation += 0.01 * currentSpeed; this.grounded = false; } // rotācijas ātrums atkarīgs no kustības
+            } else { 
+                // Ja neatrodas ne uz zemes, ne uz bloka, tad krīt un rotē
+                if (!this.grounded) {
+                    this.rotation += 0.01 * currentSpeed; 
+                }
+            }
         } else if (gameMode === "SHIP") {
             if (inputPressed) this.velocity += this.shipFlyForce; else this.velocity += this.shipGravity;
             this.velocity = Math.max(-6, Math.min(6, this.velocity)); this.y += this.velocity;
@@ -217,10 +221,10 @@ function startLevel(index) {
 function resetLevel() {
     distanceTraveled = 0; frameCount = 0; isGameOver = false; isVictory = false; levelCoinsCollected = 0;
     gameMode = currentLevel.mode; currentSpeed = currentLevel.baseSpeed;
-    player.y = groundY - player.height; player.velocity = 0; player.rotation = 0; particles = [];
+    player.y = groundY - player.height; player.velocity = 0; player.rotation = 0; player.grounded = true; particles = [];
     
     obstacles = []; pads = []; coins = []; speedPortals = [];
-    currentLevel.setup(); // Ielādē līmeņa unikālos objektus
+    currentLevel.setup(); 
 }
 
 function update() {
@@ -228,12 +232,65 @@ function update() {
 
     frameCount++;
     distanceTraveled += currentSpeed;
+
+    // Pieņemam, ka neesam uz zemes pirms pārbaužu veikšanas (lai nekristu cauri blokiem)
+    let stoodOnSomething = false;
+
+    // 1. Šķēršļu un bloku apstrāde (SVARĪGĀ DAĻA UZKĀPŠANAI)
+    for (let o of obstacles) {
+        o.x -= currentSpeed;
+
+        if (o.type === "block") {
+            // AABB Sadursmes noteikšana starp Pepe un Bloku
+            let hitX = player.x + 2 < o.x + o.width && player.x + player.width - 2 > o.x;
+            let hitY = player.y < o.y + o.height && player.y + player.height > o.y;
+
+            if (hitX && hitY) {
+                // Pārbauda vai Pepe uzkrīt no augšas (ar mazu toleranci ātrumam)
+                let overlapY = (player.y + player.height) - o.y;
+                if (overlapY <= player.velocity + 2 && player.velocity >= 0 && gameMode === "CUBE") {
+                    player.y = o.y - player.height;
+                    player.velocity = 0;
+                    player.grounded = true;
+                    stoodOnSomething = true;
+                } else {
+                    // Ja trāpa no sāniem vai apakšas - CRASH
+                    isGameOver = true;
+                }
+            }
+        } else {
+            // Sadursme ar dzeloņiem (Spikes)
+            let hitX = player.x + 6 < o.x + o.width && player.x + player.width - 6 > o.x;
+            let hitY = player.y + player.height > o.y - o.height && player.y + 4 < o.y;
+            if (hitX && hitY) {
+                isGameOver = true;
+            }
+        }
+    }
+
+    // Ja esam uz parastās zemes līmeņa
+    if (player.y + player.height >= groundY) {
+        stoodOnSomething = true;
+        player.grounded = true;
+    }
+
+    // Ja neatrodas ne uz viena bloka un ne uz zemes, Pepe zaudē "grounded" un sāk krist
+    if (!stoodOnSomething && gameMode === "CUBE") {
+        player.grounded = false;
+    }
+
+    // Atjaunina Pepe pozīciju
     player.update();
 
+    // Progresa dati
     let progress = Math.min(100, Math.floor((distanceTraveled / currentLevel.length) * 100));
     document.getElementById("scoreText").innerText = `PROGRESS: ${progress}% | 🟡:${levelCoinsCollected}/2`;
     let savedHighScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
     document.getElementById("highScoreText").innerText = `BEST: ${savedHighScore}%`;
+
+    if (isGameOver && progress > savedHighScore) {
+        localStorage.setItem(`pepeLevel_${currentLevelIndex}`, progress);
+    }
 
     if (distanceTraveled >= currentLevel.length) {
         isVictory = true;
@@ -241,22 +298,23 @@ function update() {
         return;
     }
 
+    // Astes daļiņas
     for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].x -= currentSpeed - 2; particles[i].alpha -= 0.04;
         if (particles[i].alpha <= 0) particles.splice(i, 1);
     }
 
-    // 1. Tramplīnu (Jump Pads) loģika
+    // Tramplīnu (Jump Pads) apstrāde
     for (let p of pads) {
         p.x -= currentSpeed;
-        // Sadursme ar apli (Pepe uzkāpj uz tā)
-        if (player.x + player.width > p.x - p.radius && player.x < p.x + p.radius && player.y + player.height >= p.y - 10 && player.y < p.y) {
-            player.velocity = player.jumpForce * 1.3; // Uzmet augstāk par parastu lēcienu!
+        if (player.x + player.width > p.x - p.radius && player.x < p.x + p.radius && player.y + player.height >= p.y - 12 && player.y < p.y) {
+            player.velocity = player.jumpForce * 1.35; 
             player.grounded = false;
+            player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
         }
     }
 
-    // 2. Monētu (Coins) vākšana
+    // Monētu vākšana
     for (let i = coins.length - 1; i >= 0; i--) {
         let c = coins[i];
         c.x -= currentSpeed;
@@ -266,7 +324,7 @@ function update() {
         }
     }
 
-    // 3. Ātruma / Režīmu portālu loģika
+    // Portāli
     for (let i = speedPortals.length - 1; i >= 0; i--) {
         let sp = speedPortals[i];
         sp.x -= currentSpeed;
@@ -274,24 +332,6 @@ function update() {
             currentSpeed = sp.targetSpeed;
             gameMode = sp.toMode;
             speedPortals.splice(i, 1);
-        }
-    }
-
-    // 4. Šķēršļu un sadursmju apstrāde
-    for (let o of obstacles) {
-        o.x -= currentSpeed;
-        let hitX = player.x + 4 < o.x + o.width && player.x + player.width - 4 > o.x;
-        let hitY = false;
-
-        if (o.type === "spike" || o.type === "double-spike" || o.type === "triple-spike" || o.type === "air-spike") {
-            hitY = player.y + player.height > o.y - o.height && player.y + 4 < o.y;
-        } else if (o.type === "block") {
-            hitY = player.y < o.y + o.height && player.y + player.height > o.y;
-        }
-
-        if (hitX && hitY) {
-            isGameOver = true;
-            if (progress > savedHighScore) localStorage.setItem(`pepeLevel_${currentLevelIndex}`, progress);
         }
     }
 }
@@ -331,37 +371,35 @@ function draw() {
     else if (gameState === "PLAYING" || gameState === "PAUSED") {
         ctx.fillStyle = currentLevel.bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Grid līnijas slīd atkarībā no mainīgā ātruma
         ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
         let offset = (distanceTraveled) % 40;
         for (let x = -offset; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, groundY); ctx.stroke(); }
 
         for (let p of particles) { ctx.fillStyle = `rgba(78, 240, 93, ${p.alpha})`; ctx.fillRect(p.x, p.y, p.size, p.size); }
 
-        // Zīmē Tramplīnus (Jump Pads) - dzelteni apļi
+        // Tramplīni (Jump Pads)
         for (let p of pads) {
-            ctx.fillStyle = "#ffcc00"; ctx.beginPath(); ctx.arc(p.x, p.y - 4, p.radius, 0, Math.PI, true); ctx.fill();
+            ctx.fillStyle = "#ffcc00"; ctx.beginPath(); ctx.arc(p.x, p.y - 2, p.radius, 0, Math.PI, true); ctx.fill();
         }
 
-        // Zīmē Monētas - zelta apļi
+        // Monētas
         for (let c of coins) {
             ctx.fillStyle = "#ffd700"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.arc(c.x + 10, c.y + 10, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         }
 
-        // Zīmē Ātruma/Režīma mainīgos portālus
+        // Portāli
         for (let sp of speedPortals) {
             ctx.fillStyle = "#ff00ff"; ctx.shadowBlur = 15; ctx.shadowColor = "#ff00ff";
             ctx.fillRect(sp.x, sp.y, sp.w, sp.h); ctx.shadowBlur = 0;
         }
 
-        // Šķēršļu zīmēšana
-        ctx.fillStyle = "#ff0055";
+        // Šķēršļu un bloku zīmēšana
         for (let o of obstacles) {
             if (o.type === "spike") {
-                ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + o.width / 2, o.y - o.height); ctx.lineTo(o.x + o.width, o.y); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = "#ff0055"; ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + o.width / 2, o.y - o.height); ctx.lineTo(o.x + o.width, o.y); ctx.closePath(); ctx.fill();
             } else if (o.type === "double-spike" || o.type === "triple-spike") {
-                let count = o.type === "double-spike" ? 2 : 3; let w = o.width / count;
+                ctx.fillStyle = "#ff0055"; let count = o.type === "double-spike" ? 2 : 3; let w = o.width / count;
                 for(let j=0; j<count; j++) {
                     let sx = o.x + (j*w);
                     ctx.beginPath(); ctx.moveTo(sx, o.y); ctx.lineTo(sx + w / 2, o.y - o.height); ctx.lineTo(sx + w, o.y); ctx.closePath(); ctx.fill();
@@ -369,7 +407,8 @@ function draw() {
             } else if (o.type === "air-spike") {
                 ctx.fillStyle = "#ffcc00"; ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + o.width / 2, o.y - o.height); ctx.lineTo(o.x + o.width, o.y); ctx.closePath(); ctx.fill();
             } else if (o.type === "block") {
-                ctx.fillStyle = "#3a3a3a"; ctx.fillRect(o.x, o.y, o.width, o.height); ctx.strokeStyle = "#5a5a5a"; ctx.strokeRect(o.x, o.y, o.width, o.height);
+                ctx.fillStyle = "#2d2d2d"; ctx.fillRect(o.x, o.y, o.width, o.height); 
+                ctx.strokeStyle = "#00ffff"; ctx.lineWidth = 1.5; ctx.strokeRect(o.x, o.y, o.width, o.height);
             }
         }
 
