@@ -135,14 +135,12 @@ const player = {
             this.velocity += this.gravity; 
             this.y += this.velocity;
 
-            // Pārbauda sadursmi ar zemi
             if (this.y + this.height >= groundY) {
                 this.y = groundY - this.height; 
                 this.velocity = 0; 
                 this.grounded = true;
                 this.rotation = Math.round(this.rotation / (Math.PI / 2)) * (Math.PI / 2);
             } else { 
-                // Ja neatrodas ne uz zemes, ne uz bloka, tad krīt un rotē
                 if (!this.grounded) {
                     this.rotation += 0.01 * currentSpeed; 
                 }
@@ -223,6 +221,7 @@ function resetLevel() {
     gameMode = currentLevel.mode; currentSpeed = currentLevel.baseSpeed;
     player.y = groundY - player.height; player.velocity = 0; player.rotation = 0; player.grounded = true; particles = [];
     
+    // Šeit masīvi tiek pilnībā iztīrīti un ielādēti svaigi dati no līmeņa struktūras
     obstacles = []; pads = []; coins = []; speedPortals = [];
     currentLevel.setup(); 
 }
@@ -233,20 +232,17 @@ function update() {
     frameCount++;
     distanceTraveled += currentSpeed;
 
-    // Pieņemam, ka neesam uz zemes pirms pārbaužu veikšanas (lai nekristu cauri blokiem)
     let stoodOnSomething = false;
 
-    // 1. Šķēršļu un bloku apstrāde (SVARĪGĀ DAĻA UZKĀPŠANAI)
+    // 1. Šķēršļu un bloku loģika
     for (let o of obstacles) {
         o.x -= currentSpeed;
 
         if (o.type === "block") {
-            // AABB Sadursmes noteikšana starp Pepe un Bloku
             let hitX = player.x + 2 < o.x + o.width && player.x + player.width - 2 > o.x;
             let hitY = player.y < o.y + o.height && player.y + player.height > o.y;
 
             if (hitX && hitY) {
-                // Pārbauda vai Pepe uzkrīt no augšas (ar mazu toleranci ātrumam)
                 let overlapY = (player.y + player.height) - o.y;
                 if (overlapY <= player.velocity + 2 && player.velocity >= 0 && gameMode === "CUBE") {
                     player.y = o.y - player.height;
@@ -254,12 +250,10 @@ function update() {
                     player.grounded = true;
                     stoodOnSomething = true;
                 } else {
-                    // Ja trāpa no sāniem vai apakšas - CRASH
                     isGameOver = true;
                 }
             }
         } else {
-            // Sadursme ar dzeloņiem (Spikes)
             let hitX = player.x + 6 < o.x + o.width && player.x + player.width - 6 > o.x;
             let hitY = player.y + player.height > o.y - o.height && player.y + 4 < o.y;
             if (hitX && hitY) {
@@ -268,21 +262,17 @@ function update() {
         }
     }
 
-    // Ja esam uz parastās zemes līmeņa
     if (player.y + player.height >= groundY) {
         stoodOnSomething = true;
         player.grounded = true;
     }
 
-    // Ja neatrodas ne uz viena bloka un ne uz zemes, Pepe zaudē "grounded" un sāk krist
     if (!stoodOnSomething && gameMode === "CUBE") {
         player.grounded = false;
     }
 
-    // Atjaunina Pepe pozīciju
     player.update();
 
-    // Progresa dati
     let progress = Math.min(100, Math.floor((distanceTraveled / currentLevel.length) * 100));
     document.getElementById("scoreText").innerText = `PROGRESS: ${progress}% | 🟡:${levelCoinsCollected}/2`;
     let savedHighScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
@@ -298,13 +288,12 @@ function update() {
         return;
     }
 
-    // Astes daļiņas
     for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].x -= currentSpeed - 2; particles[i].alpha -= 0.04;
         if (particles[i].alpha <= 0) particles.splice(i, 1);
     }
 
-    // Tramplīnu (Jump Pads) apstrāde
+    // Tramplīni (Jump Pads)
     for (let p of pads) {
         p.x -= currentSpeed;
         if (player.x + player.width > p.x - p.radius && player.x < p.x + p.radius && player.y + player.height >= p.y - 12 && player.y < p.y) {
@@ -314,7 +303,7 @@ function update() {
         }
     }
 
-    // Monētu vākšana
+    // Monētas
     for (let i = coins.length - 1; i >= 0; i--) {
         let c = coins[i];
         c.x -= currentSpeed;
@@ -353,6 +342,7 @@ function draw() {
         drawButton(buttons.play, "#4CAF50");
     } 
     else if (gameState === "LEVEL_SELECT") {
+        statsBar.style.display = "none";
         ctx.fillStyle = "#070c1f"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#fff"; ctx.font = "bold 28px Arial"; ctx.fillText("IZVĒLIES LĪMENI", 330, 100);
 
@@ -377,7 +367,7 @@ function draw() {
 
         for (let p of particles) { ctx.fillStyle = `rgba(78, 240, 93, ${p.alpha})`; ctx.fillRect(p.x, p.y, p.size, p.size); }
 
-        // Tramplīni (Jump Pads)
+        // Tramplīni
         for (let p of pads) {
             ctx.fillStyle = "#ffcc00"; ctx.beginPath(); ctx.arc(p.x, p.y - 2, p.radius, 0, Math.PI, true); ctx.fill();
         }
