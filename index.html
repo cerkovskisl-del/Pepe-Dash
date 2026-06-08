@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pepe Dash - Ultra Copy</title>
+    <title>Pepe Dash - Level Select</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-container">
-        <div class="stats-bar">
-            <span id="scoreText">ATTĀLUMS: 0%</span>
-            <span id="modeText">REŽĪMS: CUBE</span>
+        <div class="stats-bar" id="statsBar" style="display: none;">
+            <span id="levelNameText">LĪMENIS</span>
+            <span id="scoreText">PROGRESS: 0%</span>
             <span id="highScoreText">BEST: 0%</span>
         </div>
         <div class="canvas-wrapper">
             <canvas id="gameCanvas" width="900" height="450"></canvas>
         </div>
-        <p class="hint">CUBE: klikšķini/Space lai lēktu | SHIP: turi nospiestu lai lidotu uz augšu</p>
+        <p class="hint">Izmanto peli vai Space, lai vadītu spēli un pārvietotos pa izvēlni.</p>
     </div>
     <script src="game.js"></script>
 </body>
