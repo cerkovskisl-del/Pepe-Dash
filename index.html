@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pepe Dash</title>
+    <title>Pepe Dash - Ultra Copy</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="game-container">
-        <h1>PEPE DASH</h1>
-        <div class="canvas-wrapper">
-            <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div class="stats-bar">
+            <span id="scoreText">ATTĀLUMS: 0%</span>
+            <span id="modeText">REŽĪMS: CUBE</span>
+            <span id="highScoreText">BEST: 0%</span>
         </div>
-        <p class="controls-hint">Spied <span>SPACE</span> vai klikšķini, lai lēktu! Šķēršļi kļūst ātrāki.</p>
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="900" height="450"></canvas>
+        </div>
+        <p class="hint">CUBE: klikšķini/Space lai lēktu | SHIP: turi nospiestu lai lidotu uz augšu</p>
     </div>
-
     <script src="game.js"></script>
 </body>
 </html>
