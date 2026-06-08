@@ -23,12 +23,11 @@ let speedPortals = [];
 let particles = [];
 let frameCount = 0;
 
-// 6 PILNĪBĀ ATŠĶIRĪGI LĪMEŅI AR FIXĒTIEM IZMĒRIEM
+// 6 PILNĪBĀ ATŠĶIRĪGI LĪMEŅI
 const levels = [
     {
         name: "1. STEREO MADNESS (Classic)", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 4500, mode: "CUBE", baseSpeed: 6.5,
         setup: function() {
-            // Klasiskie dzeloņi un bloki ar nodefinitu platumu (w) un augstumu (h)
             obstacles.push({ x: 600, type: "spike", width: 30, height: 40 });
             
             // Bloku kaskāde, uz kuras var uzkāpt
@@ -47,10 +46,9 @@ const levels = [
     {
         name: "2. TIME WARP (Slow Mo)", difficulty: "Normal", bgColor: "#1a2405", floorColor: "#aaff00", length: 4000, mode: "CUBE", baseSpeed: 4.5,
         setup: function() {
-            // Lēns, bet blīvs līmenis
             for (let x = 600; x < 3500; x += 600) {
                 obstacles.push({ x: x, type: "block", y: groundY - 40, width: 60, height: 40 });
-                obstacles.push({ x: x + 15, type: "spike", y: groundY - 40, width: 30, height: 40 }); // dzelonis uz bloka
+                obstacles.push({ x: x + 15, type: "spike", y: groundY - 40, width: 30, height: 40 }); 
                 if (x % 1200 === 0) coins.push({ x: x + 20, y: groundY - 100 });
             }
         }
@@ -58,7 +56,6 @@ const levels = [
     {
         name: "3. NITRO DASH (Super Fast)", difficulty: "Hard", bgColor: "#300505", floorColor: "#ff0000", length: 6500, mode: "CUBE", baseSpeed: 11,
         setup: function() {
-            // Ļoti ātrs līmenis ar gariem blokiem
             obstacles.push({ x: 800, type: "spike", width: 30, height: 40 });
             obstacles.push({ x: 1200, type: "block", y: groundY - 60, width: 300, height: 60 });
             obstacles.push({ x: 1800, type: "triple-spike", width: 90, height: 40 });
@@ -74,7 +71,6 @@ const levels = [
             pads.push({ x: 600, y: groundY, radius: 15 });
             obstacles.push({ x: 750, type: "spike", width: 30, height: 40 });
             
-            // Tramplīns uzlikts uz augsta bloka
             obstacles.push({ x: 1200, type: "block", y: groundY - 80, width: 80, height: 80 });
             pads.push({ x: 1240, y: groundY - 80, radius: 15 }); 
             
@@ -88,7 +84,6 @@ const levels = [
     {
         name: "5. SHIP FLIGHT (Flappy Pepe)", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 6000, mode: "SHIP", baseSpeed: 7.5,
         setup: function() {
-            // Lidošanas labirints kuģītim
             for (let x = 600; x < 5500; x += 600) {
                 obstacles.push({ x: x, type: "block", y: 40, width: 60, height: 140 });
                 obstacles.push({ x: x + 300, type: "block", y: groundY - 140, width: 60, height: 140 });
@@ -103,7 +98,6 @@ const levels = [
             obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 120, height: 40 });
             obstacles.push({ x: 1600, type: "air-spike", y: groundY - 60, width: 30, height: 40 });
             
-            // Ātruma/Režīma portāls
             speedPortals.push({ x: 2200, y: groundY - 140, w: 40, h: 140, targetSpeed: 11, toMode: "SHIP" });
             
             obstacles.push({ x: 2800, type: "block", y: 40, width: 60, height: 160 });
@@ -257,7 +251,6 @@ function update() {
                 }
             }
         } else {
-            // Sadursme ar dzeloņiem
             let hitX = player.x + 6 < o.x + o.width && player.x + player.width - 6 > o.x;
             let hitY = false;
             if (o.type === "air-spike") {
@@ -415,7 +408,7 @@ function draw() {
 
         ctx.fillStyle = "#000"; ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY); ctx.fillRect(0, 0, canvas.width, 40);
         ctx.strokeStyle = currentLevel.floorColor; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); stroke();
+        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke(); // IZLABOTS ŠEIT
         ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
 
         drawButton(buttons.pauseBtn, "#555");
