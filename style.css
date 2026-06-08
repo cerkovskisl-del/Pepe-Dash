@@ -6,7 +6,7 @@
 }
 
 body {
-    background-color: #0b0518;
+    background-color: #06030d;
     font-family: 'Courier New', Courier, monospace;
     display: flex;
     justify-content: center;
@@ -27,16 +27,16 @@ body {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: bold;
     color: #00ffff;
     text-shadow: 0 0 5px #00ffff;
 }
 
 .canvas-wrapper {
-    border: 4px solid #222;
+    border: 4px solid #2d1b4e;
     border-radius: 6px;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 50px rgba(79, 43, 145, 0.4);
     background-color: #000;
 }
 
@@ -47,5 +47,5 @@ canvas {
 .hint {
     margin-top: 10px;
     font-size: 0.85rem;
-    color: #444;
+    color: #554a70;
 }
