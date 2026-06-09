@@ -246,29 +246,67 @@ function generateNextInfinityObstacle() {
     let roll = Math.random();
     let distanceGap = Math.random() * 100 + 320; 
 
-    if (Math.random() < 0.12 && nextInfinityObstacleX > 1200) {
+    // Portālu ģenerēšana režīmu maiņai
+    if (Math.random() < 0.15 && nextInfinityObstacleX > 1200) {
         let nextMode = (gameMode === "CUBE") ? "SHIP" : "CUBE";
         portals.push({ x: nextInfinityObstacleX, y: groundY - 140, targetMode: nextMode });
-        nextInfinityObstacleX += 350;
+        
+        // Iedodam spēlētājam 450px telpu pēc portāla, lai paspēj pārorientēties
+        nextInfinityObstacleX += 450; 
+
+        // Uzreiz aiz portāla noliekam sākuma šķērsli jaunajam režīmam
+        if (nextMode === "SHIP") {
+            obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40, width: 60, height: 100 });
+            obstacles.push({ x: nextInfinityObstacleX, type: "block", y: groundY - 100, width: 60, height: 100 });
+        } else {
+            obstacles.push({ x: nextInfinityObstacleX, type: "spike", width: 30, height: 40 });
+        }
+        
+        nextInfinityObstacleX += distanceGap;
         return;
     }
 
+    // Šķēršļi Kubam (Zemes režīms)
     if (gameMode === "CUBE") {
-        if (roll < 0.4) {
-            obstacles.push({ x: nextInfinityObstacleX, type: Math.random() > 0.5 ? "spike" : "double-spike", width: 30, height: 40 });
-            if (Math.random() > 0.5) coins.push({ x: nextInfinityObstacleX, y: groundY - 100 });
-        } else if (roll < 0.75) {
+        if (roll < 0.35) {
+            let isDouble = Math.random() > 0.6;
+            obstacles.push({ x: nextInfinityObstacleX, type: isDouble ? "double-spike" : "spike", width: isDouble ? 60 : 30, height: 40 });
+            if (Math.random() > 0.5) coins.push({ x: nextInfinityObstacleX + 10, y: groundY - 100 });
+        } 
+        else if (roll < 0.70) {
             let blockHeight = Math.random() > 0.5 ? 40 : 80;
             obstacles.push({ x: nextInfinityObstacleX, type: "block", y: groundY - blockHeight, width: 60, height: blockHeight });
-        } else {
+            if (Math.random() > 0.6) {
+                obstacles.push({ x: nextInfinityObstacleX + 60, type: "spike", width: 30, height: 40 });
+            }
+        } 
+        else {
             pads.push({ x: nextInfinityObstacleX, y: groundY, radius: 15 });
-            obstacles.push({ x: nextInfinityObstacleX + 180, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: nextInfinityObstacleX + 120, type: "double-spike", width: 60, height: 40 });
+            coins.push({ x: nextInfinityObstacleX + 60, y: groundY - 120 });
         }
-    } else {
-        let gapY = Math.random() * 90 + 120; 
-        let topWallHeight = Math.random() * 120 + 40;
-        obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40, width: 60, height: topWallHeight });
-        obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40 + topWallHeight + gapY, width: 60, height: groundY - (40 + topWallHeight + gapY) });
+    } 
+    // Šķēršļi Kuģim (Lidošanas režīms)
+    else if (gameMode === "SHIP") {
+        let gapY = Math.random() * 80 + 110; 
+        let topWallHeight = Math.random() * 130 + 40;
+        let bottomWallY = 40 + topWallHeight + gapY;
+        let bottomWallHeight = groundY - bottomWallY;
+
+        if (roll < 0.5) {
+            // Tunelis (augša + apakša)
+            obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40, width: 60, height: topWallHeight });
+            obstacles.push({ x: nextInfinityObstacleX, type: "block", y: bottomWallY, width: 60, height: bottomWallHeight });
+            if (Math.random() > 0.5) coins.push({ x: nextInfinityObstacleX + 20, y: 40 + topWallHeight + (gapY / 2) - 10 });
+        } 
+        else if (roll < 0.8) {
+            // Siena augšā - jālido zemu
+            obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40, width: 80, height: 160 });
+        } 
+        else {
+            // Siena apakšā - jālido augstu
+            obstacles.push({ x: nextInfinityObstacleX, type: "block", y: groundY - 160, width: 80, height: 160 });
+        }
     }
 
     nextInfinityObstacleX += distanceGap;
