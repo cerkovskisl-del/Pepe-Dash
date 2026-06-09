@@ -2,11 +2,30 @@
 <html lang="lv">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pepe Dash - Ultra Extended Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="rotateWarning" style="
+        display: none; 
+        position: fixed; 
+        top: 0; left: 0; 
+        width: 100%; height: 100%; 
+        background: #090414; 
+        color: white; 
+        z-index: 9999; 
+        text-align: center; 
+        justify-content: center; 
+        align-items: center; 
+        flex-direction: column;
+        font-family: Arial, sans-serif;
+    ">
+        <div style="font-size: 50px; margin-bottom: 20px;">🔄</div>
+        <h2 style="margin: 0 20px; font-size: 24px;">Lūdzu, pagrieziet ierīci horizontāli!</h2>
+        <p style="color: #88aa88; margin-top: 10px; font-size: 14px;">Šai spēlei ir nepieciešams plats ekrāns.</p>
+    </div>
+
     <div class="game-container">
         <div class="stats-bar" id="statsBar" style="display: none;">
             <span id="levelNameText">LĪMENIS</span>
@@ -16,8 +35,9 @@
         <div class="canvas-wrapper">
             <canvas id="gameCanvas" width="900" height="450"></canvas>
         </div>
-        <p class="hint">Space / Klikšķis = Lēkt/Lidot | **P** = Pauze</p>
+        <p class="hint">Space / Klikšķis / Pieskāriens = Lēkt/Lidot | **P** = Pauze</p>
     </div>
+
     <script src="game.js"></script>
 </body>
 </html>
