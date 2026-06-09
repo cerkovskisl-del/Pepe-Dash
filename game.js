@@ -1,6 +1,7 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const statsBar = document.getElementById("statsBar");
+const rotateWarning = document.getElementById("rotateWarning");
 
 let gameState = "MENU"; 
 const groundY = 370;
@@ -12,10 +13,7 @@ let isVictory = false;
 let gameMode = "CUBE"; 
 let inputPressed = false;
 
-// Delta Time mainīgie priekš plūdenas kustības
 let lastTime = 0;
-
-// Spēles bāzes ātrumi
 let currentSpeed = 400; 
 let levelCoinsCollected = 0; 
 
@@ -27,6 +25,31 @@ let particles = [];
 let frameCount = 0;
 let particleTimer = 0;
 
+// AUTOMĀTISKĀ EKRĀNA ROTĀCIJA UN PĀRBAUDE
+function checkOrientation() {
+    // Pārbauda vai ekrāns ir vertikāls (height ir lielāks par width)
+    if (window.innerHeight > window.innerWidth) {
+        rotateWarning.style.display = "flex"; // Parāda brīdinājumu
+    } else {
+        rotateWarning.style.display = "none"; // Paslēpj brīdinājumu
+    }
+}
+
+// Funkcija, kas mēģina piespiest telefonu pagriezties automātiski
+function tryLockOrientation() {
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock("landscape").catch((err) => {
+            console.log("Automātiskā rotācija bloķēta. Jāpagriež manuāli: ", err);
+        });
+    }
+}
+
+// Klausās uz ekrāna izmēru izmaiņām (kad pagriež telefonu)
+window.addEventListener("resize", checkOrientation);
+window.addEventListener("orientationchange", checkOrientation);
+// Pārbauda uzreiz ielādējot spēli
+checkOrientation();
+
 // 6 LĪMEŅI
 const levels = [
     {
@@ -36,11 +59,9 @@ const levels = [
             obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 80, height: 40 });
             obstacles.push({ x: 1080, type: "block", y: groundY - 80, width: 80, height: 80 });
             obstacles.push({ x: 1400, type: "spike", width: 30, height: 40 });
-            
             pads.push({ x: 1800, y: groundY, radius: 15 });
             obstacles.push({ x: 1840, type: "spike", width: 30, height: 40 });
             obstacles.push({ x: 2400, type: "double-spike", width: 60, height: 40 });
-            
             coins.push({ x: 1080, y: groundY - 140 });
             coins.push({ x: 3200, y: groundY - 80 });
         }
@@ -96,13 +117,10 @@ const levels = [
             obstacles.push({ x: 500, type: "triple-spike", width: 90, height: 40 });
             obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 120, height: 40 });
             obstacles.push({ x: 1600, type: "air-spike", y: groundY - 60, width: 30, height: 40 });
-            
             speedPortals.push({ x: 2200, y: groundY - 140, w: 40, h: 140, targetSpeed: 600, toMode: "SHIP" });
-            
             obstacles.push({ x: 2800, type: "block", y: 40, width: 60, height: 160 });
             obstacles.push({ x: 3300, type: "block", y: groundY - 160, width: 60, height: 160 });
             coins.push({ x: 3800, y: 200 });
-            
             speedPortals.push({ x: 5500, y: groundY - 140, w: 40, h: 140, targetSpeed: 420, toMode: "CUBE" });
             obstacles.push({ x: 6200, type: "triple-spike", width: 90, height: 40 });
         }
@@ -121,7 +139,6 @@ const buttons = {
     exit: { x: 350, y: 300, w: 200, h: 50, text: "MENU" }
 };
 
-// Spēlētājs
 const player = {
     x: 150, y: groundY - 40, width: 40, height: 40, velocity: 0,
     gravity: 42, shipGravity: 21, jumpForce: -750, shipFlyForce: -52, grounded: false, rotation: 0,
@@ -166,8 +183,9 @@ const player = {
     }
 };
 
-// Apstrādā klikšķa/skāriena loģiku (Kopīga funkcija datoram un telefonam)
 function handlePress(clientX, clientY) {
+    tryLockOrientation(); // Mēģina pagriezt ekrānu brīdī, kad lietotājs pirmo reizi pieskaras spēlei
+    
     const rect = canvas.getBoundingClientRect();
     const mouseX = clientX - rect.left;
     const mouseY = clientY - rect.top;
@@ -194,13 +212,11 @@ function handlePress(clientX, clientY) {
     }
 }
 
-// DATORA PELE
 canvas.addEventListener("mousedown", (e) => { handlePress(e.clientX, e.clientY); });
 canvas.addEventListener("mouseup", () => { inputPressed = false; });
 
-// TELEFONA TOUCH NOTIKUMI (Pievienots priekš telefoniem)
 canvas.addEventListener("touchstart", (e) => {
-    e.preventDefault(); // Neļauj telefonam pietuvināt/zoomot ekrānu strauju pieskārienu laikā
+    e.preventDefault(); 
     if (e.touches.length > 0) {
         handlePress(e.touches[0].clientX, e.touches[0].clientY);
     }
@@ -211,7 +227,6 @@ canvas.addEventListener("touchend", (e) => {
     inputPressed = false;
 }, { passive: false });
 
-// KLAVIATŪRA (Datoram)
 window.addEventListener("keydown", (e) => {
     if (e.code === "KeyP") { gameState = (gameState === "PLAYING") ? "PAUSED" : (gameState === "PAUSED" ? "PLAYING" : gameState); }
     if (e.code === "Space" || e.code === "ArrowUp") {
@@ -316,7 +331,6 @@ function update(dt) {
         if (particles[i].alpha <= 0) particles.splice(i, 1);
     }
 
-    // Tramplīni
     for (let p of pads) {
         p.x -= moveAmount;
         if (player.x + player.width > p.x - p.radius && player.x < p.x + p.radius && player.y + player.height >= p.y - 12 && player.y < p.y) {
@@ -326,7 +340,6 @@ function update(dt) {
         }
     }
 
-    // Monētas
     for (let i = coins.length - 1; i >= 0; i--) {
         let c = coins[i];
         c.x -= moveAmount;
@@ -336,7 +349,6 @@ function update(dt) {
         }
     }
 
-    // Portāli
     for (let i = speedPortals.length - 1; i >= 0; i--) {
         let sp = speedPortals[i];
         sp.x -= moveAmount;
