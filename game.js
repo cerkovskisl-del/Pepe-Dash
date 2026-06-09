@@ -62,7 +62,7 @@ window.addEventListener("resize", checkOrientation);
 window.addEventListener("orientationchange", checkOrientation);
 checkOrientation();
 
-// SABALANSĒTI LĪMEŅI (Atstarpes salabotas: 300-450 pikseļi, lai nav par tuvu un nav par tālu)
+// Līmeņi ar sabalansētām atstarpēm (300-450px)
 const levels = [
     {
         name: "1. STEREO MADNESS", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 2800, mode: "CUBE", baseSpeed: 350,
@@ -244,7 +244,7 @@ const player = {
 
 function generateNextInfinityObstacle() {
     let roll = Math.random();
-    let distanceGap = Math.random() * 100 + 320; // Sabalansēta bezgalīgā režīma atstarpe
+    let distanceGap = Math.random() * 100 + 320; 
 
     if (Math.random() < 0.12 && nextInfinityObstacleX > 1200) {
         let nextMode = (gameMode === "CUBE") ? "SHIP" : "CUBE";
@@ -399,7 +399,6 @@ function update(dt) {
         }
     }
 
-    // --- PILNĪBĀ PĀRSTRĀDĀTA UN DROŠA SADURSMJU SISTĒMA BLOKIEM ---
     for (let o of obstacles) {
         o.x -= moveAmount;
         if (o.type === "block") {
@@ -407,22 +406,18 @@ function update(dt) {
             let hitY = player.y < o.y + o.height && player.y + player.height > o.y;
 
             if (hitX && hitY) {
-                // Aprēķinām, no kuras puses spēlētājs saskaras ar bloku
                 let prevPlayerBottom = player.y + player.height - (player.velocity * dt);
                 
-                // Ja spēlētājs pirms šī kadra bija virs bloka, viņš droši piezemējas
                 if (prevPlayerBottom <= o.y + 6 && player.velocity >= 0 && gameMode === "CUBE") {
                     player.y = o.y - player.height; 
                     player.velocity = 0; 
                     player.grounded = true; 
                     stoodOnSomething = true;
                 } else { 
-                    // Jebkura cita sadursme (no sāna vai apakšas) nozīmē nāvi
                     isGameOver = true; 
                 }
             }
         } else {
-            // Spikes (Dzeloņu) sadursmes
             let hitX = player.x + 6 < o.x + o.width && player.x + player.width - 6 > o.x;
             let hitY = player.y + player.height > groundY - o.height && player.y < groundY;
             if (hitX && hitY) isGameOver = true;
@@ -580,7 +575,7 @@ function draw() {
             }
         }
 
-        // --- GEOMETRY DASH STILA PORTĀLI ---
+        // GEOMETRY DASH PORTĀLI
         for (let p of portals) {
             ctx.save(); ctx.translate(p.x + 20, p.y + 60);
             let portalColor = (p.targetMode === "SHIP") ? "#ff6600" : "#00ff33"; 
@@ -597,7 +592,7 @@ function draw() {
             ctx.fillText(p.targetMode, p.x + 20, p.y - 10); ctx.textAlign = "start";
         }
 
-        // --- BATUTI AR ATSPERES MEHĀNISMU ---
+        // BATUTI
         for (let p of pads) {
             ctx.fillStyle = "#555"; ctx.fillRect(p.x - 18, p.y - 4, 36, 4);
             ctx.strokeStyle = "#aaa"; ctx.lineWidth = 2;
@@ -636,7 +631,7 @@ function draw() {
 
         ctx.fillStyle = "#000"; ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY); ctx.fillRect(0, 0, canvas.width, 40);
         ctx.strokeStyle = currentLevel.floorColor; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); stroke();
+        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
 
         drawButton(buttons.pauseBtn, "#555");
