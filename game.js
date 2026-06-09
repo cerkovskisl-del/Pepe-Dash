@@ -6,7 +6,7 @@ const rotateWarning = document.getElementById("rotateWarning");
 let gameState = "MENU"; 
 const groundY = 370;
 let currentLevel = null;
-let currentLevelIndex = 0; // 0-5 for Levels, 6 for Infinity Mode
+let currentLevelIndex = 0; 
 let distanceTraveled = 0;
 let isGameOver = false;
 let isVictory = false;
@@ -17,9 +17,9 @@ let lastTime = 0;
 let currentSpeed = 400; 
 let levelCoinsCollected = 0; 
 
-// Infinity Mode specific tracking variables
+// Infinity Mode tracking
 let infinityHighScore = parseInt(localStorage.getItem("pepeInfinityBest")) || 0;
-let nextInfinityObstacleX = 600; 
+let nextInfinityObstacleX = 500; 
 
 // Coin economy
 let totalCoins = parseInt(localStorage.getItem("pepeTotalCoins")) || 0;
@@ -38,11 +38,12 @@ const skins = {
 let obstacles = [];
 let pads = [];
 let coins = [];
+let portals = []; // Jauns masīvs kuģīša/kubiņa portāliem
 let particles = [];
 let frameCount = 0;
 let particleTimer = 0;
+let portalRotation = 0; // Animācijai
 
-// Orientation check
 function checkOrientation() {
     if (window.innerHeight > window.innerWidth) {
         rotateWarning.style.display = "flex"; 
@@ -61,122 +62,131 @@ window.addEventListener("resize", checkOrientation);
 window.addEventListener("orientationchange", checkOrientation);
 checkOrientation();
 
-// 6 Structured Levels + Metadata for Infinity Mode
+// LĪMEŅI (Atstarpes ir samazinātas, lai spēle būtu blīvāka un interesantāka)
 const levels = [
     {
-        name: "1. STEREO MADNESS", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 3500, mode: "CUBE", baseSpeed: 350,
-        setup: function() {
-            obstacles.push({ x: 600, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 80, height: 40 });
-            obstacles.push({ x: 1400, type: "spike", width: 30, height: 40 });
-            coins.push({ x: 1040, y: groundY - 90 }); 
-            pads.push({ x: 1800, y: groundY, radius: 15 });
-            obstacles.push({ x: 2000, type: "double-spike", width: 60, height: 40 });
-            obstacles.push({ x: 2400, type: "block", y: groundY - 40, width: 40, height: 40 });
-            obstacles.push({ x: 2440, type: "block", y: groundY - 80, width: 40, height: 40 });
-            coins.push({ x: 2440, y: groundY - 140 });
-            obstacles.push({ x: 2900, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 3100, type: "block", y: groundY - 40, width: 120, height: 40 });
-        }
-    },
-    {
-        name: "2. TRAMPOLINE VALLEY", difficulty: "Normal", bgColor: "#05262b", floorColor: "#00ffcc", length: 3800, mode: "CUBE", baseSpeed: 380,
-        setup: function() {
-            pads.push({ x: 600, y: groundY, radius: 15 });
-            obstacles.push({ x: 800, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 1300, type: "block", y: groundY - 40, width: 120, height: 40 });
-            pads.push({ x: 1360, y: groundY - 40, radius: 15 });
-            coins.push({ x: 1360, y: groundY - 120 });
-            obstacles.push({ x: 1900, type: "double-spike", width: 60, height: 40 });
-            pads.push({ x: 2300, y: groundY, radius: 15 });
-            obstacles.push({ x: 2700, type: "block", y: groundY - 60, width: 80, height: 60 });
-            coins.push({ x: 2720, y: groundY - 120 });
-            obstacles.push({ x: 3100, type: "spike", width: 30, height: 40 });
-            pads.push({ x: 3300, y: groundY, radius: 15 });
-            obstacles.push({ x: 3450, type: "double-spike", width: 60, height: 40 });
-        }
-    },
-    {
-        name: "3. SHIP FLIGHT", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 4200, mode: "SHIP", baseSpeed: 380,
-        setup: function() {
-            obstacles.push({ x: 700, type: "block", y: 40, width: 60, height: 140 });
-            obstacles.push({ x: 1100, type: "block", y: groundY - 140, width: 60, height: 140 });
-            coins.push({ x: 900, y: 200 });
-            obstacles.push({ x: 1600, type: "block", y: 40, width: 80, height: 180 });
-            obstacles.push({ x: 2100, type: "block", y: groundY - 180, width: 80, height: 180 });
-            coins.push({ x: 1850, y: 250 });
-            obstacles.push({ x: 2600, type: "block", y: 120, width: 50, height: 120 });
-            obstacles.push({ x: 3100, type: "block", y: 40, width: 60, height: 140 });
-            obstacles.push({ x: 3500, type: "block", y: groundY - 140, width: 60, height: 140 });
-            obstacles.push({ x: 3800, type: "block", y: 40, width: 40, height: 120 });
-            obstacles.push({ x: 3800, type: "block", y: groundY - 120, width: 40, height: 120 });
-            coins.push({ x: 3810, y: 200 });
-        }
-    },
-    {
-        name: "4. JUMP MACHINE", difficulty: "Hard", bgColor: "#3d1111", floorColor: "#ff3333", length: 4000, mode: "CUBE", baseSpeed: 410,
+        name: "1. STEREO MADNESS", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 2400, mode: "CUBE", baseSpeed: 350,
         setup: function() {
             obstacles.push({ x: 500, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 800, type: "double-spike", width: 60, height: 40 });
-            obstacles.push({ x: 1200, type: "block", y: groundY - 40, width: 40, height: 40 });
-            obstacles.push({ x: 1240, type: "spike", width: 30, height: 40 });
-            pads.push({ x: 1600, y: groundY, radius: 15 });
-            obstacles.push({ x: 1900, type: "block", y: groundY - 80, width: 120, height: 20 });
-            coins.push({ x: 1950, y: groundY - 130 });
-            obstacles.push({ x: 2300, type: "spike", width: 30, height: 40 });
-            pads.push({ x: 2600, y: groundY, radius: 15 });
-            obstacles.push({ x: 2900, type: "double-spike", width: 60, height: 40 });
-            obstacles.push({ x: 3300, type: "block", y: groundY - 40, width: 80, height: 40 });
-            obstacles.push({ x: 3340, type: "spike", width: 30, height: 40 });
-            coins.push({ x: 3350, y: groundY - 90 });
+            obstacles.push({ x: 750, type: "block", y: groundY - 40, width: 80, height: 40 });
+            coins.push({ x: 790, y: groundY - 90 }); 
+            obstacles.push({ x: 950, type: "spike", width: 30, height: 40 });
+            
+            pads.push({ x: 1200, y: groundY, radius: 15 });
+            obstacles.push({ x: 1350, type: "double-spike", width: 60, height: 40 });
+            
+            obstacles.push({ x: 1600, type: "block", y: groundY - 40, width: 40, height: 40 });
+            obstacles.push({ x: 1640, type: "block", y: groundY - 80, width: 40, height: 40 });
+            coins.push({ x: 1640, y: groundY - 140 });
+            
+            obstacles.push({ x: 1900, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 2100, type: "block", y: groundY - 40, width: 120, height: 40 });
         }
     },
     {
-        name: "5. COSMIC TUNNEL", difficulty: "Insane", bgColor: "#02162e", floorColor: "#0088ff", length: 4600, mode: "SHIP", baseSpeed: 430,
+        name: "2. TRAMPOLINE VALLEY", difficulty: "Normal", bgColor: "#05262b", floorColor: "#00ffcc", length: 2600, mode: "CUBE", baseSpeed: 380,
         setup: function() {
-            // Tight alternating spaces for ship mode
-            obstacles.push({ x: 600, type: "block", y: 40, width: 100, height: 200 });
-            obstacles.push({ x: 1000, type: "block", y: groundY - 200, width: 100, height: 200 });
-            coins.push({ x: 1300, y: 100 });
-            obstacles.push({ x: 1500, type: "block", y: 40, width: 50, height: 120 });
-            obstacles.push({ x: 1700, type: "block", y: groundY - 120, width: 50, height: 120 });
-            obstacles.push({ x: 2000, type: "block", y: 130, width: 200, height: 80 });
-            coins.push({ x: 2100, y: 80 });
-            coins.push({ x: 2100, y: 300 });
-            obstacles.push({ x: 2500, type: "block", y: 40, width: 80, height: 220 });
-            obstacles.push({ x: 2900, type: "block", y: groundY - 220, width: 80, height: 220 });
-            obstacles.push({ x: 3400, type: "block", y: 100, width: 40, height: 140 });
-            obstacles.push({ x: 3800, type: "block", y: 40, width: 120, height: 160 });
-            obstacles.push({ x: 4100, type: "block", y: groundY - 160, width: 120, height: 160 });
-        }
-    },
-    {
-        name: "6. DEMONIC CLIMAX", difficulty: "Demon", bgColor: "#1a0202", floorColor: "#ff0000", length: 5000, mode: "CUBE", baseSpeed: 460,
-        setup: function() {
-            obstacles.push({ x: 500, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 800, type: "double-spike", width: 60, height: 40 });
-            obstacles.push({ x: 1100, type: "block", y: groundY - 40, width: 40, height: 40 });
-            obstacles.push({ x: 1300, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 500, y: groundY, radius: 15 });
+            obstacles.push({ x: 680, type: "spike", width: 30, height: 40 });
+            
+            obstacles.push({ x: 950, type: "block", y: groundY - 40, width: 120, height: 40 });
+            pads.push({ x: 1010, y: groundY - 40, radius: 15 });
+            coins.push({ x: 1010, y: groundY - 120 });
+
+            obstacles.push({ x: 1350, type: "double-spike", width: 60, height: 40 });
             pads.push({ x: 1600, y: groundY, radius: 15 });
-            obstacles.push({ x: 1800, type: "block", y: groundY - 80, width: 40, height: 80 });
-            obstacles.push({ x: 2100, type: "double-spike", width: 60, height: 40 });
-            coins.push({ x: 2130, y: groundY - 90 });
-            obstacles.push({ x: 2500, type: "block", y: groundY - 40, width: 120, height: 40 });
-            obstacles.push({ x: 2540, type: "spike", width: 30, height: 40 });
-            pads.push({ x: 2900, y: groundY, radius: 15 });
-            obstacles.push({ x: 3200, type: "block", y: groundY - 120, width: 40, height: 120 });
-            obstacles.push({ x: 3600, type: "double-spike", width: 60, height: 40 });
-            obstacles.push({ x: 4000, type: "block", y: groundY - 40, width: 80, height: 40 });
-            obstacles.push({ x: 4040, type: "block", y: groundY - 80, width: 40, height: 40 });
-            obstacles.push({ x: 4400, type: "spike", width: 30, height: 40 });
-            coins.push({ x: 4400, y: groundY - 100 });
+            obstacles.push({ x: 1850, type: "block", y: groundY - 60, width: 80, height: 60 });
+            coins.push({ x: 1870, y: groundY - 120 });
+            
+            obstacles.push({ x: 2100, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 2250, y: groundY, radius: 15 });
+            obstacles.push({ x: 2350, type: "double-spike", width: 60, height: 40 });
         }
     },
     {
-        // Special placeholder entry inside the levels array to register Infinity Mode option inside Level Select loop
+        name: "3. SHIP FLIGHT", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 2800, mode: "SHIP", baseSpeed: 390,
+        setup: function() {
+            obstacles.push({ x: 500, type: "block", y: 40, width: 60, height: 140 });
+            obstacles.push({ x: 750, type: "block", y: groundY - 140, width: 60, height: 140 });
+            coins.push({ x: 620, y: 200 });
+
+            obstacles.push({ x: 1100, type: "block", y: 40, width: 80, height: 180 });
+            obstacles.push({ x: 1400, type: "block", y: groundY - 180, width: 80, height: 180 });
+            coins.push({ x: 1250, y: 250 });
+
+            obstacles.push({ x: 1750, type: "block", y: 120, width: 50, height: 120 });
+            obstacles.push({ x: 2050, type: "block", y: 40, width: 60, height: 140 });
+            obstacles.push({ x: 2300, type: "block", y: groundY - 140, width: 60, height: 140 });
+            
+            obstacles.push({ x: 2550, type: "block", y: 40, width: 40, height: 120 });
+            obstacles.push({ x: 2550, type: "block", y: groundY - 120, width: 40, height: 120 });
+            coins.push({ x: 2560, y: 200 });
+        }
+    },
+    {
+        name: "4. PORTAL SWITCH", difficulty: "Hard", bgColor: "#3d1111", floorColor: "#ff3333", length: 3000, mode: "CUBE", baseSpeed: 410,
+        setup: function() {
+            // Sākas kā Cube, tad pārvēršas par kuģi un atpakaļ
+            obstacles.push({ x: 450, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 650, type: "double-spike", width: 60, height: 40 });
+            
+            // Portāls uz SHIP mode
+            portals.push({ x: 850, y: groundY - 100, targetMode: "SHIP" });
+            obstacles.push({ x: 1100, type: "block", y: 40, width: 50, height: 120 });
+            obstacles.push({ x: 1350, type: "block", y: groundY - 120, width: 50, height: 120 });
+            coins.push({ x: 1220, y: 200 });
+            
+            // Portāls atpakaļ uz CUBE mode
+            portals.push({ x: 1600, y: groundY - 100, targetMode: "CUBE" });
+            obstacles.push({ x: 1850, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 2050, y: groundY, radius: 15 });
+            obstacles.push({ x: 2250, type: "block", y: groundY - 60, width: 80, height: 60 });
+            coins.push({ x: 2290, y: groundY - 110 });
+            obstacles.push({ x: 2550, type: "double-spike", width: 60, height: 40 });
+        }
+    },
+    {
+        name: "5. COSMIC TUNNEL", difficulty: "Insane", bgColor: "#02162e", floorColor: "#0088ff", length: 3200, mode: "SHIP", baseSpeed: 430,
+        setup: function() {
+            obstacles.push({ x: 500, type: "block", y: 40, width: 100, height: 200 });
+            obstacles.push({ x: 800, type: "block", y: groundY - 200, width: 100, height: 200 });
+            coins.push({ x: 1050, y: 100 });
+            obstacles.push({ x: 1250, type: "block", y: 40, width: 50, height: 120 });
+            obstacles.push({ x: 1450, type: "block", y: groundY - 120, width: 50, height: 120 });
+            obstacles.push({ x: 1700, type: "block", y: 130, width: 200, height: 80 });
+            coins.push({ x: 1800, y: 80 });
+            obstacles.push({ x: 2100, type: "block", y: 40, width: 80, height: 220 });
+            obstacles.push({ x: 2450, type: "block", y: groundY - 220, width: 80, height: 220 });
+            obstacles.push({ x: 2750, type: "block", y: 100, width: 40, height: 140 });
+        }
+    },
+    {
+        name: "6. DEMONIC CLIMAX", difficulty: "Demon", bgColor: "#1a0202", floorColor: "#ff0000", length: 3400, mode: "CUBE", baseSpeed: 460,
+        setup: function() {
+            obstacles.push({ x: 450, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 650, type: "double-spike", width: 60, height: 40 });
+            obstacles.push({ x: 850, type: "block", y: groundY - 40, width: 40, height: 40 });
+            obstacles.push({ x: 1000, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 1200, y: groundY, radius: 15 });
+            obstacles.push({ x: 1350, type: "block", y: groundY - 80, width: 40, height: 80 });
+            obstacles.push({ x: 1550, type: "double-spike", width: 60, height: 40 });
+            coins.push({ x: 1580, y: groundY - 90 });
+            
+            portals.push({ x: 1750, y: groundY - 100, targetMode: "SHIP" });
+            obstacles.push({ x: 2000, type: "block", y: 40, width: 60, height: 160 });
+            obstacles.push({ x: 2250, type: "block", y: groundY - 160, width: 60, height: 160 });
+            
+            portals.push({ x: 2500, y: groundY - 100, targetMode: "CUBE" });
+            obstacles.push({ x: 2750, type: "block", y: groundY - 40, width: 80, height: 40 });
+            obstacles.push({ x: 2790, type: "block", y: groundY - 80, width: 40, height: 40 });
+            obstacles.push({ x: 3050, type: "spike", width: 30, height: 40 });
+            coins.push({ x: 3050, y: groundY - 100 });
+        }
+    },
+    {
         name: "INFINITY ENDLESS", difficulty: "Variable", bgColor: "#1f1f1f", floorColor: "#ffffff", length: Infinity, mode: "DYNAMIC", baseSpeed: 360,
         setup: function() {
-            nextInfinityObstacleX = 600;
+            nextInfinityObstacleX = 500;
             generateNextInfinityObstacle();
             generateNextInfinityObstacle();
             generateNextInfinityObstacle();
@@ -252,30 +262,36 @@ const player = {
     }
 };
 
-// PROCEDURAL RANDOM GENERATOR FOR ENDLESS MODE
 function generateNextInfinityObstacle() {
     let roll = Math.random();
-    let distanceGap = Math.random() * 250 + 300; // Keep elements cleanly separate
+    let distanceGap = Math.random() * 150 + 200; // Mazākas atstarpes arī bezgalīgajā režīmā
+
+    // Reizēm bezgalīgajā režīmā nejauši izveidojam režīma maiņas portālu
+    if (Math.random() < 0.15 && nextInfinityObstacleX > 1000) {
+        let nextMode = (gameMode === "CUBE") ? "SHIP" : "CUBE";
+        portals.push({ x: nextInfinityObstacleX, y: groundY - 120, targetMode: nextMode });
+        nextInfinityObstacleX += 300;
+        return;
+    }
 
     if (gameMode === "CUBE") {
-        if (roll < 0.35) {
-            obstacles.push({ x: nextInfinityObstacleX, type: Math.random() > 0.4 ? "spike" : "double-spike", width: 30, height: 40 });
+        if (roll < 0.4) {
+            obstacles.push({ x: nextInfinityObstacleX, type: Math.random() > 0.5 ? "spike" : "double-spike", width: 30, height: 40 });
             if (Math.random() > 0.5) coins.push({ x: nextInfinityObstacleX, y: groundY - 100 });
-        } else if (roll < 0.70) {
+        } else if (roll < 0.75) {
             let blockHeight = Math.random() > 0.5 ? 40 : 80;
             obstacles.push({ x: nextInfinityObstacleX, type: "block", y: groundY - blockHeight, width: 60, height: blockHeight });
             if (Math.random() > 0.5) coins.push({ x: nextInfinityObstacleX + 15, y: groundY - blockHeight - 50 });
         } else {
             pads.push({ x: nextInfinityObstacleX, y: groundY, radius: 15 });
-            obstacles.push({ x: nextInfinityObstacleX + 180, type: "double-spike", width: 60, height: 40 });
+            obstacles.push({ x: nextInfinityObstacleX + 140, type: "spike", width: 30, height: 40 });
         }
     } else {
-        // SHIP MODE random walls
-        let gapY = Math.random() * 120 + 100; // safe space corridor height
-        let topWallHeight = Math.random() * 140 + 40;
+        let gapY = Math.random() * 100 + 110; 
+        let topWallHeight = Math.random() * 130 + 40;
         obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40, width: 60, height: topWallHeight });
         obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40 + topWallHeight + gapY, width: 60, height: groundY - (40 + topWallHeight + gapY) });
-        if (Math.random() > 0.4) coins.push({ x: nextInfinityObstacleX + 15, y: 40 + topWallHeight + (gapY / 2) - 10 });
+        if (Math.random() > 0.5) coins.push({ x: nextInfinityObstacleX + 15, y: 40 + topWallHeight + (gapY / 2) - 10 });
     }
 
     nextInfinityObstacleX += distanceGap;
@@ -300,7 +316,6 @@ function handleShopClick(key) {
 
 function handlePress(clientX, clientY) {
     tryLockOrientation(); 
-    
     const rect = canvas.getBoundingClientRect();
     const mouseX = clientX - rect.left;
     const mouseY = clientY - rect.top;
@@ -367,17 +382,11 @@ function startLevel(index) {
 
 function resetLevel() {
     distanceTraveled = 0; frameCount = 0; isGameOver = false; isVictory = false; levelCoinsCollected = 0;
-    
-    if (currentLevel.length === Infinity) {
-        gameMode = "CUBE"; // Start endless mode on foot
-        currentSpeed = currentLevel.baseSpeed;
-    } else {
-        gameMode = currentLevel.mode; 
-        currentSpeed = currentLevel.baseSpeed;
-    }
+    gameMode = (currentLevel.length === Infinity) ? "CUBE" : currentLevel.mode; 
+    currentSpeed = currentLevel.baseSpeed;
 
     player.y = groundY - player.height; player.velocity = 0; player.rotation = 0; player.grounded = true; particles = [];
-    obstacles = []; pads = []; coins = []; 
+    obstacles = []; pads = []; coins = []; portals = [];
     currentLevel.setup(); 
     lastTime = performance.now();
 }
@@ -386,41 +395,37 @@ function update(dt) {
     if (gameState !== "PLAYING" || isGameOver || isVictory) return;
 
     frameCount++;
+    portalRotation += 4 * dt; // Portālu griešanās animācijai
     let moveAmount = currentSpeed * dt;
     distanceTraveled += moveAmount;
     let stoodOnSomething = false;
 
-    // INFINITY ENDLESS PROCEDURAL DISPATCH SYSTEM
     if (currentLevel.length === Infinity) {
-        // Slowly increment speed to elevate pressure over runtime distance
-        currentSpeed = 360 + Math.floor(distanceTraveled / 150);
-        
-        // Alternate between plane navigation and standard physics modes dynamically every 2000 meters
-        let desiredMode = Math.floor(distanceTraveled / 2000) % 2 === 0 ? "CUBE" : "SHIP";
-        if (gameMode !== desiredMode) {
-            gameMode = desiredMode;
-            player.velocity = 0;
-        }
-
-        // Garbage collect off-screen array indices and regenerate oncoming objects
+        currentSpeed = 360 + Math.floor(distanceTraveled / 180);
         if (obstacles.length > 0 && obstacles[0].x < -200) obstacles.shift();
         if (pads.length > 0 && pads[0].x < -200) pads.shift();
         if (coins.length > 0 && coins[0].x < -200) coins.shift();
+        if (portals.length > 0 && portals[0].x < -200) portals.shift();
 
         if (nextInfinityObstacleX - distanceTraveled < canvas.width + 300) {
             generateNextInfinityObstacle();
         }
     }
 
-    // Collision checks loop
-    for (let o of obstacles) {
-        if (currentLevel.length === Infinity) {
-            // Absolute screen offset mapping for endless mode components
-            o.x = (o.x === undefined) ? nextInfinityObstacleX : o.x - moveAmount;
-        } else {
-            o.x -= moveAmount;
+    // Portālu loģika un kustība
+    for (let p of portals) {
+        p.x -= moveAmount;
+        // Sadursme ar portālu (Aktivizē SHIP vai CUBE režīmu)
+        if (player.x + player.width > p.x && player.x < p.x + 40 && player.y + player.height > p.y && player.y < p.y + 120) {
+            if (gameMode !== p.targetMode) {
+                gameMode = p.targetMode;
+                player.velocity = 0; // Nobalansē pāreju
+            }
         }
+    }
 
+    for (let o of obstacles) {
+        o.x -= moveAmount;
         if (o.type === "block") {
             let hitX = player.x + 2 < o.x + o.width && player.x + player.width - 2 > o.x;
             let hitY = player.y < o.y + o.height && player.y + player.height > o.y;
@@ -442,12 +447,10 @@ function update(dt) {
 
     player.update(dt);
 
-    // Scoreboard metrics UI update statements
     if (currentLevel.length === Infinity) {
         let displayDist = Math.floor(distanceTraveled);
         document.getElementById("scoreText").innerText = `SCORE: ${displayDist}m | 🟡 COINS: ${levelCoinsCollected}`;
         document.getElementById("highScoreText").innerText = `BEST: ${infinityHighScore}m`;
-        
         if (isGameOver && displayDist > infinityHighScore) {
             infinityHighScore = displayDist;
             localStorage.setItem("pepeInfinityBest", infinityHighScore);
@@ -486,7 +489,7 @@ function update(dt) {
         if (player.x < c.x + 20 && player.x + player.width > c.x && player.y < c.y + 20 && player.y + player.height > c.y) {
             levelCoinsCollected++; 
             if(currentLevel.length === Infinity) {
-                totalCoins++; // Endless gives bankable coins on the fly
+                totalCoins++; 
                 localStorage.setItem("pepeTotalCoins", totalCoins);
             }
             coins.splice(i, 1);
@@ -533,9 +536,7 @@ function draw() {
         statsBar.style.display = "none";
         ctx.fillStyle = "#090414"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#4CAF50"; ctx.font = "bold 50px Arial"; ctx.fillText("PEPE DASH", 310, 110);
-        
         ctx.fillStyle = "#ffd700"; ctx.font = "18px Arial"; ctx.fillText(`TOTAL COINS: 🟡 ${totalCoins}`, 350, 150);
-
         drawButton(buttons.play, "#4CAF50");
         drawButton(buttons.shopBtn, "#ffd700");
     } 
@@ -544,12 +545,10 @@ function draw() {
         ctx.fillStyle = "#fff"; ctx.font = "bold 30px Arial"; ctx.fillText("SKIN SHOP", 380, 70);
         ctx.fillStyle = "#ffd700"; ctx.font = "20px Arial"; ctx.fillText(`Your balance: 🟡 ${totalCoins}`, 360, 110);
         ctx.fillStyle = "#888"; ctx.font = "14px Arial"; ctx.fillText("(Coins are saved when you successfully finish a level!)", 280, 140);
-
         drawShopItem(buttons.shopItem1, "DEFAULT");
         drawShopItem(buttons.shopItem2, "RED_DEMON");
         drawShopItem(buttons.shopItem3, "GOLD_KING");
         drawShopItem(buttons.shopItem4, "CYBER_BLUE");
-
         drawButton(buttons.back, "#ff3333");
     }
     else if (gameState === "LEVEL_SELECT") {
@@ -571,7 +570,6 @@ function draw() {
             let savedScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
             ctx.fillStyle = "#00ffff"; ctx.fillText(`Best attempt: ${savedScore}%`, 270, 250);
         }
-
         drawButton(buttons.prev); drawButton(buttons.next); drawButton(buttons.select, "#4CAF50"); drawButton(buttons.back, "#ff3333");
     } 
     else if (gameState === "PLAYING" || gameState === "PAUSED") {
@@ -583,23 +581,59 @@ function draw() {
 
         for (let p of particles) { ctx.fillStyle = `rgba(78, 240, 93, ${p.alpha})`; ctx.fillRect(p.x, p.y, p.size, p.size); }
 
-        // --- DRAW FINISH LINE STRUCTURE (ONLY RENDER IF NOT IN ENDLESS MODE) ---
+        // --- FINIŠA LĪNIJA ---
         if (currentLevel.length !== Infinity) {
             let finishLineX = (currentLevel.length - distanceTraveled) + player.x;
             if (finishLineX < canvas.width + 100) {
                 ctx.fillStyle = "#fff"; ctx.fillRect(finishLineX, 40, 30, groundY - 40); 
                 ctx.fillStyle = "#000";
                 for (let yOffset = 40; yOffset < groundY; yOffset += 20) {
-                    ctx.fillRect(finishLineX, yOffset, 15, 10);
-                    ctx.fillRect(finishLineX + 15, yOffset + 10, 15, 10);
+                    ctx.fillRect(finishLineX, yOffset, 15, 10); ctx.fillRect(finishLineX + 15, yOffset + 10, 15, 10);
                 }
-                ctx.strokeStyle = "#33ff33"; ctx.lineWidth = 4;
-                ctx.beginPath(); ctx.moveTo(finishLineX, 40); ctx.lineTo(finishLineX, groundY); ctx.stroke();
+                ctx.strokeStyle = "#33ff33"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(finishLineX, 40); ctx.lineTo(finishLineX, groundY); ctx.stroke();
             }
         }
 
+        // --- JAUNA PORTĀLU VIZUALIZĀCIJA (Neona ovāli kā Geometry Dash) ---
+        for (let p of portals) {
+            ctx.save();
+            ctx.translate(p.x + 20, p.y + 60);
+            
+            // Portāla krāsa atkarībā no tā, uz ko tas maina režīmu
+            let portalColor = (p.targetMode === "SHIP") ? "#ff6600" : "#00ff33"; 
+            
+            // Ārējais neona spīdums
+            ctx.shadowBlur = 15; ctx.shadowColor = portalColor;
+            ctx.fillStyle = portalColor;
+            ctx.beginPath(); ctx.ellipse(0, 0, 20, 60, 0, 0, Math.PI * 2); ctx.fill();
+            
+            // Iekšējais tumšais caurums
+            ctx.shadowBlur = 0; ctx.fillStyle = "#050510";
+            ctx.beginPath(); ctx.ellipse(0, 0, 12, 50, 0, 0, Math.PI * 2); ctx.fill();
+
+            // Rotējoši stari / daļiņas portāla iekšpusē un ārpusē
+            ctx.strokeStyle = portalColor; ctx.lineWidth = 3; ctx.rotate(portalRotation);
+            for(let i=0; i<4; i++) {
+                ctx.rotate(Math.PI / 2); ctx.beginPath(); ctx.moveTo(0, -45); ctx.lineTo(0, -55); ctx.stroke();
+            }
+            ctx.restore();
+            
+            // Režīma teksts virs portāla aizsardzībai
+            ctx.fillStyle = "#fff"; ctx.font = "bold 11px Arial"; ctx.textAlign = "center";
+            ctx.fillText(p.targetMode, p.x + 20, p.y - 10); ctx.textAlign = "start";
+        }
+
+        // --- JAUNS BATUTU (JUMP PADS) DIZAINS (Ar atsperes mehānismu) ---
         for (let p of pads) {
-            ctx.fillStyle = "#ffcc00"; ctx.beginPath(); ctx.arc(p.x, p.y - 2, p.radius, 0, Math.PI, true); ctx.fill();
+            // Mehāniskā pamatne un atspere
+            ctx.fillStyle = "#555"; ctx.fillRect(p.x - 18, p.y - 4, 36, 4);
+            ctx.strokeStyle = "#aaa"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(p.x - 10, p.y - 4); ctx.lineTo(p.x - 5, p.y - 10); ctx.lineTo(p.x, p.y - 4);
+            ctx.lineTo(p.x + 5, p.y - 10); ctx.lineTo(p.x + 10, p.y - 4); ctx.stroke();
+
+            // Spilgti dzeltenā / oranžā augšdaļa lēcienam
+            ctx.fillStyle = "#ffaa00"; ctx.beginPath(); ctx.arc(p.x, p.y - 10, p.radius, 0, Math.PI, true); ctx.fill();
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
         }
 
         for (let c of coins) {
@@ -624,9 +658,8 @@ function draw() {
 
         player.draw();
 
-        // Mode notice banner during Endless mode phase shifts
         if (currentLevel.length === Infinity) {
-            ctx.fillStyle = "rgba(255,255,255,0.15)"; ctx.font = "bold 14px Arial";
+            ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.font = "bold 14px Arial";
             ctx.fillText(`MODE: ${gameMode}`, 50, 70);
         }
 
