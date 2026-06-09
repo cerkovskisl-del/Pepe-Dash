@@ -17,6 +17,20 @@ let lastTime = 0;
 let currentSpeed = 400; 
 let levelCoinsCollected = 0; 
 
+// Coin economy
+let totalCoins = parseInt(localStorage.getItem("pepeTotalCoins")) || 0;
+
+// Skin system
+let currentSkin = localStorage.getItem("pepeSelectedSkin") || "DEFAULT";
+let unlockedSkins = JSON.parse(localStorage.getItem("pepeUnlockedSkins")) || ["DEFAULT"];
+
+const skins = {
+    DEFAULT: { color: "#4CAF50", eyeColor: "#000", name: "Classic", price: 0 },
+    RED_DEMON: { color: "#ff2a6d", eyeColor: "#fff", name: "Red Demon", price: 3 },
+    GOLD_KING: { color: "#ffd700", eyeColor: "#ff00ff", name: "Gold King", price: 7 },
+    CYBER_BLUE: { color: "#00f0ff", eyeColor: "#fff", name: "Cyber Blue", price: 12 }
+};
+
 let obstacles = [];
 let pads = [];
 let coins = [];
@@ -25,123 +39,104 @@ let particles = [];
 let frameCount = 0;
 let particleTimer = 0;
 
-// AUTOMĀTISKĀ EKRĀNA ROTĀCIJA UN PĀRBAUDE
+// Orientation check
 function checkOrientation() {
-    // Pārbauda vai ekrāns ir vertikāls (height ir lielāks par width)
     if (window.innerHeight > window.innerWidth) {
-        rotateWarning.style.display = "flex"; // Parāda brīdinājumu
+        rotateWarning.style.display = "flex"; 
     } else {
-        rotateWarning.style.display = "none"; // Paslēpj brīdinājumu
+        rotateWarning.style.display = "none"; 
     }
 }
 
-// Funkcija, kas mēģina piespiest telefonu pagriezties automātiski
 function tryLockOrientation() {
     if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock("landscape").catch((err) => {
-            console.log("Automātiskā rotācija bloķēta. Jāpagriež manuāli: ", err);
-        });
+        screen.orientation.lock("landscape").catch((err) => {});
     }
 }
 
-// Klausās uz ekrāna izmēru izmaiņām (kad pagriež telefonu)
 window.addEventListener("resize", checkOrientation);
 window.addEventListener("orientationchange", checkOrientation);
-// Pārbauda uzreiz ielādējot spēli
 checkOrientation();
 
-// 6 LĪMEŅI
+// Level setup
 const levels = [
     {
-        name: "1. STEREO MADNESS (Classic)", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 4500, mode: "CUBE", baseSpeed: 380,
+        name: "1. STEREO MADNESS", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 4000, mode: "CUBE", baseSpeed: 350,
         setup: function() {
             obstacles.push({ x: 600, type: "spike", width: 30, height: 40 });
             obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 80, height: 40 });
-            obstacles.push({ x: 1080, type: "block", y: groundY - 80, width: 80, height: 80 });
             obstacles.push({ x: 1400, type: "spike", width: 30, height: 40 });
-            pads.push({ x: 1800, y: groundY, radius: 15 });
-            obstacles.push({ x: 1840, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 2400, type: "double-spike", width: 60, height: 40 });
-            coins.push({ x: 1080, y: groundY - 140 });
-            coins.push({ x: 3200, y: groundY - 80 });
+            coins.push({ x: 1040, y: groundY - 90 }); 
+            
+            pads.push({ x: 1900, y: groundY, radius: 15 });
+            obstacles.push({ x: 2100, type: "double-spike", width: 60, height: 40 });
+            
+            obstacles.push({ x: 2600, type: "block", y: groundY - 40, width: 40, height: 40 });
+            obstacles.push({ x: 2640, type: "block", y: groundY - 80, width: 40, height: 40 });
+            coins.push({ x: 2640, y: groundY - 140 });
+            
+            obstacles.push({ x: 3200, type: "spike", width: 30, height: 40 });
         }
     },
     {
-        name: "2. TIME WARP (Slow Mo)", difficulty: "Normal", bgColor: "#1a2405", floorColor: "#aaff00", length: 4000, mode: "CUBE", baseSpeed: 250,
-        setup: function() {
-            for (let x = 600; x < 3500; x += 600) {
-                obstacles.push({ x: x, type: "block", y: groundY - 40, width: 60, height: 40 });
-                obstacles.push({ x: x + 15, type: "spike", y: groundY - 40, width: 30, height: 40 }); 
-                if (x % 1200 === 0) coins.push({ x: x + 20, y: groundY - 100 });
-            }
-        }
-    },
-    {
-        name: "3. NITRO DASH (Super Fast)", difficulty: "Hard", bgColor: "#300505", floorColor: "#ff0000", length: 6500, mode: "CUBE", baseSpeed: 600,
-        setup: function() {
-            obstacles.push({ x: 800, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 1200, type: "block", y: groundY - 60, width: 300, height: 60 });
-            obstacles.push({ x: 1800, type: "triple-spike", width: 90, height: 40 });
-            pads.push({ x: 2400, y: groundY, radius: 15 });
-            coins.push({ x: 1350, y: groundY - 120 }); 
-            obstacles.push({ x: 3500, type: "block", y: groundY - 40, width: 200, height: 40 });
-            obstacles.push({ x: 4500, type: "triple-spike", width: 90, height: 40 });
-        }
-    },
-    {
-        name: "4. TRAMPOLINE VALLEY", difficulty: "Hard", bgColor: "#05262b", floorColor: "#00ffcc", length: 5000, mode: "CUBE", baseSpeed: 420,
+        name: "2. TRAMPOLINE VALLEY", difficulty: "Normal", bgColor: "#05262b", floorColor: "#00ffcc", length: 4500, mode: "CUBE", baseSpeed: 380,
         setup: function() {
             pads.push({ x: 600, y: groundY, radius: 15 });
-            obstacles.push({ x: 750, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 1200, type: "block", y: groundY - 80, width: 80, height: 80 });
-            pads.push({ x: 1240, y: groundY - 80, radius: 15 }); 
-            obstacles.push({ x: 1800, type: "block", y: groundY - 140, width: 80, height: 140 });
-            coins.push({ x: 1240, y: groundY - 150 });
-            obstacles.push({ x: 2400, type: "triple-spike", width: 90, height: 40 });
-            pads.push({ x: 3000, y: groundY, radius: 15 });
+            obstacles.push({ x: 800, type: "spike", width: 30, height: 40 });
+            
+            obstacles.push({ x: 1300, type: "block", y: groundY - 40, width: 120, height: 40 });
+            pads.push({ x: 1360, y: groundY - 40, radius: 15 });
+            coins.push({ x: 1360, y: groundY - 120 });
+
+            obstacles.push({ x: 2000, type: "double-spike", width: 60, height: 40 });
+            pads.push({ x: 2500, y: groundY, radius: 15 });
+            obstacles.push({ x: 2900, type: "block", y: groundY - 60, width: 80, height: 60 });
+            coins.push({ x: 2920, y: groundY - 120 });
+            obstacles.push({ x: 3600, type: "spike", width: 30, height: 40 });
         }
     },
     {
-        name: "5. SHIP FLIGHT (Flappy Pepe)", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 6000, mode: "SHIP", baseSpeed: 420,
+        name: "3. SHIP FLIGHT", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 5000, mode: "SHIP", baseSpeed: 380,
         setup: function() {
-            for (let x = 600; x < 5500; x += 600) {
-                obstacles.push({ x: x, type: "block", y: 40, width: 60, height: 140 });
-                obstacles.push({ x: x + 300, type: "block", y: groundY - 140, width: 60, height: 140 });
-                if (x % 1200 === 0) coins.push({ x: x + 130, y: 140 });
-            }
-        }
-    },
-    {
-        name: "6. DEMONIC SPEEDWAY", difficulty: "Demon", bgColor: "#000000", floorColor: "#ff3300", length: 8000, mode: "CUBE", baseSpeed: 460,
-        setup: function() {
-            obstacles.push({ x: 500, type: "triple-spike", width: 90, height: 40 });
-            obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 120, height: 40 });
-            obstacles.push({ x: 1600, type: "air-spike", y: groundY - 60, width: 30, height: 40 });
-            speedPortals.push({ x: 2200, y: groundY - 140, w: 40, h: 140, targetSpeed: 600, toMode: "SHIP" });
-            obstacles.push({ x: 2800, type: "block", y: 40, width: 60, height: 160 });
-            obstacles.push({ x: 3300, type: "block", y: groundY - 160, width: 60, height: 160 });
-            coins.push({ x: 3800, y: 200 });
-            speedPortals.push({ x: 5500, y: groundY - 140, w: 40, h: 140, targetSpeed: 420, toMode: "CUBE" });
-            obstacles.push({ x: 6200, type: "triple-spike", width: 90, height: 40 });
+            obstacles.push({ x: 700, type: "block", y: 40, width: 60, height: 140 });
+            obstacles.push({ x: 1100, type: "block", y: groundY - 140, width: 60, height: 140 });
+            coins.push({ x: 900, y: 200 });
+
+            obstacles.push({ x: 1600, type: "block", y: 40, width: 80, height: 180 });
+            obstacles.push({ x: 2100, type: "block", y: groundY - 180, width: 80, height: 180 });
+            coins.push({ x: 1850, y: 250 });
+
+            obstacles.push({ x: 2800, type: "block", y: 120, width: 50, height: 120 });
+            obstacles.push({ x: 3400, type: "block", y: 40, width: 60, height: 140 });
+            obstacles.push({ x: 3900, type: "block", y: groundY - 140, width: 60, height: 140 });
         }
     }
 ];
 
+// UI Buttons
 const buttons = {
-    play: { x: 350, y: 220, w: 200, h: 60, text: "START" },
+    play: { x: 350, y: 180, w: 200, h: 50, text: "START" },
+    shopBtn: { x: 350, y: 250, w: 200, h: 50, text: "SHOP" },
+    
     prev: { x: 100, y: 220, w: 80, h: 60, text: "<" },
     next: { x: 720, y: 220, w: 80, h: 60, text: ">" },
     select: { x: 325, y: 320, w: 250, h: 50, text: "PLAY" },
     back: { x: 30, y: 30, w: 100, h: 40, text: "BACK" },
+    
     pauseBtn: { x: 840, y: 10, w: 40, h: 40, text: "II" },
     resume: { x: 350, y: 160, w: 200, h: 50, text: "RESUME" },
     restart: { x: 350, y: 230, w: 200, h: 50, text: "RESTART" },
-    exit: { x: 350, y: 300, w: 200, h: 50, text: "MENU" }
+    exit: { x: 350, y: 300, w: 200, h: 50, text: "MENU" },
+
+    shopItem1: { x: 150, y: 180, w: 140, h: 140, skinKey: "DEFAULT" },
+    shopItem2: { x: 320, y: 180, w: 140, h: 140, skinKey: "RED_DEMON" },
+    shopItem3: { x: 490, y: 180, w: 140, h: 140, skinKey: "GOLD_KING" },
+    shopItem4: { x: 660, y: 180, w: 140, h: 140, skinKey: "CYBER_BLUE" }
 };
 
 const player = {
     x: 150, y: groundY - 40, width: 40, height: 40, velocity: 0,
-    gravity: 42, shipGravity: 21, jumpForce: -750, shipFlyForce: -52, grounded: false, rotation: 0,
+    gravity: 42, shipGravity: 21, jumpForce: -730, shipFlyForce: -50, grounded: false, rotation: 0,
 
     update(dt) {
         if (gameMode === "CUBE") {
@@ -175,16 +170,37 @@ const player = {
     },
     draw() {
         ctx.save(); ctx.translate(this.x + this.width / 2, this.y + this.height / 2); ctx.rotate(this.rotation);
-        ctx.fillStyle = "#4CAF50"; ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        
+        let skin = skins[currentSkin];
+        ctx.fillStyle = skin.color; ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
         ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        
         ctx.fillStyle = "#fff"; ctx.fillRect(-12, -12, 10, 10); ctx.fillRect(2, -12, 10, 10);
-        ctx.fillStyle = "#000"; ctx.fillRect(-8, -9, 4, 4); ctx.fillRect(6, -9, 4, 4);
-        ctx.fillStyle = "#ff3333"; ctx.fillRect(-10, 4, 20, 4); ctx.restore();
+        ctx.fillStyle = skin.eyeColor; ctx.fillRect(-8, -9, 4, 4); ctx.fillRect(6, -9, 4, 4);
+        
+        ctx.fillStyle = "#000"; ctx.fillRect(-10, 6, 20, 3); ctx.restore();
     }
 };
 
+function handleShopClick(key) {
+    let skin = skins[key];
+    if (unlockedSkins.includes(key)) {
+        currentSkin = key;
+        localStorage.setItem("pepeSelectedSkin", currentSkin);
+    } else {
+        if (totalCoins >= skin.price) {
+            totalCoins -= skin.price;
+            unlockedSkins.push(key);
+            currentSkin = key;
+            localStorage.setItem("pepeTotalCoins", totalCoins);
+            localStorage.setItem("pepeUnlockedSkins", JSON.stringify(unlockedSkins));
+            localStorage.setItem("pepeSelectedSkin", currentSkin);
+        }
+    }
+}
+
 function handlePress(clientX, clientY) {
-    tryLockOrientation(); // Mēģina pagriezt ekrānu brīdī, kad lietotājs pirmo reizi pieskaras spēlei
+    tryLockOrientation(); 
     
     const rect = canvas.getBoundingClientRect();
     const mouseX = clientX - rect.left;
@@ -192,7 +208,15 @@ function handlePress(clientX, clientY) {
 
     if (gameState === "MENU") {
         if (checkClick(mouseX, mouseY, buttons.play)) gameState = "LEVEL_SELECT";
+        else if (checkClick(mouseX, mouseY, buttons.shopBtn)) gameState = "SHOP";
     } 
+    else if (gameState === "SHOP") {
+        if (checkClick(mouseX, mouseY, buttons.back)) gameState = "MENU";
+        else if (checkClick(mouseX, mouseY, buttons.shopItem1)) handleShopClick("DEFAULT");
+        else if (checkClick(mouseX, mouseY, buttons.shopItem2)) handleShopClick("RED_DEMON");
+        else if (checkClick(mouseX, mouseY, buttons.shopItem3)) handleShopClick("GOLD_KING");
+        else if (checkClick(mouseX, mouseY, buttons.shopItem4)) handleShopClick("CYBER_BLUE");
+    }
     else if (gameState === "LEVEL_SELECT") {
         if (checkClick(mouseX, mouseY, buttons.prev)) currentLevelIndex = (currentLevelIndex - 1 + levels.length) % levels.length;
         else if (checkClick(mouseX, mouseY, buttons.next)) currentLevelIndex = (currentLevelIndex + 1) % levels.length;
@@ -217,18 +241,11 @@ canvas.addEventListener("mouseup", () => { inputPressed = false; });
 
 canvas.addEventListener("touchstart", (e) => {
     e.preventDefault(); 
-    if (e.touches.length > 0) {
-        handlePress(e.touches[0].clientX, e.touches[0].clientY);
-    }
+    if (e.touches.length > 0) handlePress(e.touches[0].clientX, e.touches[0].clientY);
 }, { passive: false });
-
-canvas.addEventListener("touchend", (e) => {
-    e.preventDefault();
-    inputPressed = false;
-}, { passive: false });
+canvas.addEventListener("touchend", (e) => { e.preventDefault(); inputPressed = false; }, { passive: false });
 
 window.addEventListener("keydown", (e) => {
-    if (e.code === "KeyP") { gameState = (gameState === "PLAYING") ? "PAUSED" : (gameState === "PAUSED" ? "PLAYING" : gameState); }
     if (e.code === "Space" || e.code === "ArrowUp") {
         inputPressed = true;
         if (gameState === "PLAYING") {
@@ -253,7 +270,6 @@ function resetLevel() {
     distanceTraveled = 0; frameCount = 0; isGameOver = false; isVictory = false; levelCoinsCollected = 0;
     gameMode = currentLevel.mode; currentSpeed = currentLevel.baseSpeed;
     player.y = groundY - player.height; player.velocity = 0; player.rotation = 0; player.grounded = true; particles = [];
-    
     obstacles = []; pads = []; coins = []; speedPortals = [];
     currentLevel.setup(); 
     lastTime = performance.now();
@@ -265,63 +281,42 @@ function update(dt) {
     frameCount++;
     let moveAmount = currentSpeed * dt;
     distanceTraveled += moveAmount;
-
     let stoodOnSomething = false;
 
     for (let o of obstacles) {
         o.x -= moveAmount;
-
         if (o.type === "block") {
             let hitX = player.x + 2 < o.x + o.width && player.x + player.width - 2 > o.x;
             let hitY = player.y < o.y + o.height && player.y + player.height > o.y;
-
             if (hitX && hitY) {
                 let overlapY = (player.y + player.height) - o.y;
                 if (overlapY <= (player.velocity * dt) + 4 && player.velocity >= 0 && gameMode === "CUBE") {
-                    player.y = o.y - player.height;
-                    player.velocity = 0;
-                    player.grounded = true;
-                    stoodOnSomething = true;
-                } else {
-                    isGameOver = true;
-                }
+                    player.y = o.y - player.height; player.velocity = 0; player.grounded = true; stoodOnSomething = true;
+                } else { isGameOver = true; }
             }
         } else {
             let hitX = player.x + 6 < o.x + o.width && player.x + player.width - 6 > o.x;
-            let hitY = false;
-            if (o.type === "air-spike") {
-                hitY = player.y + player.height > o.y - o.height && player.y < o.y;
-            } else {
-                hitY = player.y + player.height > groundY - o.height && player.y < groundY;
-            }
-            if (hitX && hitY) {
-                isGameOver = true;
-            }
+            let hitY = player.y + player.height > groundY - o.height && player.y < groundY;
+            if (hitX && hitY) isGameOver = true;
         }
     }
 
-    if (player.y + player.height >= groundY) {
-        stoodOnSomething = true;
-        player.grounded = true;
-    }
-
-    if (!stoodOnSomething && gameMode === "CUBE") {
-        player.grounded = false;
-    }
+    if (player.y + player.height >= groundY) { stoodOnSomething = true; player.grounded = true; }
+    if (!stoodOnSomething && gameMode === "CUBE") player.grounded = false;
 
     player.update(dt);
 
     let progress = Math.min(100, Math.floor((distanceTraveled / currentLevel.length) * 100));
-    document.getElementById("scoreText").innerText = `PROGRESS: ${progress}% | 🟡:${levelCoinsCollected}/2`;
+    document.getElementById("scoreText").innerText = `PROGRESS: ${progress}% | 🟡 IN LEVEL: ${levelCoinsCollected}`;
     let savedHighScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
     document.getElementById("highScoreText").innerText = `BEST: ${savedHighScore}%`;
 
-    if (isGameOver && progress > savedHighScore) {
-        localStorage.setItem(`pepeLevel_${currentLevelIndex}`, progress);
-    }
+    if (isGameOver && progress > savedHighScore) localStorage.setItem(`pepeLevel_${currentLevelIndex}`, progress);
 
     if (distanceTraveled >= currentLevel.length) {
         isVictory = true;
+        totalCoins += levelCoinsCollected; 
+        localStorage.setItem("pepeTotalCoins", totalCoins);
         localStorage.setItem(`pepeLevel_${currentLevelIndex}`, 100);
         return;
     }
@@ -334,28 +329,14 @@ function update(dt) {
     for (let p of pads) {
         p.x -= moveAmount;
         if (player.x + player.width > p.x - p.radius && player.x < p.x + p.radius && player.y + player.height >= p.y - 12 && player.y < p.y) {
-            player.velocity = player.jumpForce * 1.15; 
-            player.grounded = false;
-            player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
+            player.velocity = player.jumpForce * 1.15; player.grounded = false;
         }
     }
 
     for (let i = coins.length - 1; i >= 0; i--) {
-        let c = coins[i];
-        c.x -= moveAmount;
+        let c = coins[i]; c.x -= moveAmount;
         if (player.x < c.x + 20 && player.x + player.width > c.x && player.y < c.y + 20 && player.y + player.height > c.y) {
-            levelCoinsCollected++;
-            coins.splice(i, 1);
-        }
-    }
-
-    for (let i = speedPortals.length - 1; i >= 0; i--) {
-        let sp = speedPortals[i];
-        sp.x -= moveAmount;
-        if (player.x + player.width > sp.x && player.x < sp.x + sp.w && player.y + player.height > sp.y && player.y < sp.y + sp.h) {
-            currentSpeed = sp.targetSpeed;
-            gameMode = sp.toMode;
-            speedPortals.splice(i, 1);
+            levelCoinsCollected++; coins.splice(i, 1);
         }
     }
 }
@@ -367,29 +348,71 @@ function drawButton(btn, color = "#00ffff") {
     ctx.fillText(btn.text, btn.x + btn.w / 2, btn.y + btn.h / 2 + 6); ctx.textAlign = "start";
 }
 
+function drawShopItem(btn, skinKey) {
+    let skin = skins[skinKey];
+    let isUnlocked = unlockedSkins.includes(skinKey);
+    let isSelected = currentSkin === skinKey;
+
+    ctx.fillStyle = "#151525"; ctx.strokeStyle = isSelected ? "#33ff33" : (isUnlocked ? "#00ffff" : "#555");
+    ctx.lineWidth = isSelected ? 4 : 2;
+    ctx.fillRect(btn.x, btn.y, btn.w, btn.h); ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+
+    ctx.fillStyle = skin.color; ctx.fillRect(btn.x + 50, btn.y + 30, 40, 40);
+    ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.strokeRect(btn.x + 50, btn.y + 30, 40, 40);
+
+    ctx.fillStyle = "#fff"; ctx.font = "14px Arial"; ctx.textAlign = "center";
+    ctx.fillText(skin.name, btn.x + btn.w / 2, btn.y + 95);
+
+    if (isSelected) {
+        ctx.fillStyle = "#33ff33"; ctx.fillText("EQUIPPED", btn.x + btn.w / 2, btn.y + 120);
+    } else if (isUnlocked) {
+        ctx.fillStyle = "#00ffff"; ctx.fillText("SELECT", btn.x + btn.w / 2, btn.y + 120);
+    } else {
+        ctx.fillStyle = "#ffd700"; ctx.fillText(`🟡 ${skin.price}`, btn.x + btn.w / 2, btn.y + 120);
+    }
+    ctx.textAlign = "start";
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (gameState === "MENU") {
         statsBar.style.display = "none";
         ctx.fillStyle = "#090414"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#4CAF50"; ctx.font = "bold 50px Arial"; ctx.fillText("PEPE DASH", 310, 140);
+        ctx.fillStyle = "#4CAF50"; ctx.font = "bold 50px Arial"; ctx.fillText("PEPE DASH", 310, 110);
+        
+        ctx.fillStyle = "#ffd700"; ctx.font = "18px Arial"; ctx.fillText(`TOTAL COINS: 🟡 ${totalCoins}`, 350, 150);
+
         drawButton(buttons.play, "#4CAF50");
+        drawButton(buttons.shopBtn, "#ffd700");
     } 
+    else if (gameState === "SHOP") {
+        ctx.fillStyle = "#090414"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff"; ctx.font = "bold 30px Arial"; ctx.fillText("SKIN SHOP", 380, 70);
+        ctx.fillStyle = "#ffd700"; ctx.font = "20px Arial"; ctx.fillText(`Your balance: 🟡 ${totalCoins}`, 360, 110);
+        ctx.fillStyle = "#888"; ctx.font = "14px Arial"; ctx.fillText("(Coins are saved when you successfully finish a level!)", 280, 140);
+
+        drawShopItem(buttons.shopItem1, "DEFAULT");
+        drawShopItem(buttons.shopItem2, "RED_DEMON");
+        drawShopItem(buttons.shopItem3, "GOLD_KING");
+        drawShopItem(buttons.shopItem4, "CYBER_BLUE");
+
+        drawButton(buttons.back, "#ff3333");
+    }
     else if (gameState === "LEVEL_SELECT") {
         statsBar.style.display = "none";
         ctx.fillStyle = "#070c1f"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#fff"; ctx.font = "bold 28px Arial"; ctx.fillText("SELECT LEVEL", 330, 100);
+        ctx.fillStyle = "#fff"; ctx.font = "bold 28px Arial"; ctx.fillText("SELECT LEVEL", 350, 100);
 
         let lvl = levels[currentLevelIndex];
         ctx.fillStyle = "#111a3a"; ctx.fillRect(250, 140, 400, 150);
         ctx.strokeStyle = "#00ffff"; ctx.strokeRect(250, 140, 400, 150);
 
         ctx.fillStyle = "#fff"; ctx.font = "18px Arial"; ctx.fillText(lvl.name, 270, 180);
-        ctx.fillStyle = lvl.difficulty === "Demon" ? "#ff00ff" : (lvl.difficulty === "Hard" ? "#ff3333" : "#33ff33");
+        ctx.fillStyle = lvl.difficulty === "Hard" ? "#ff3333" : (lvl.difficulty === "Normal" ? "#ffcc00" : "#33ff33");
         ctx.fillText(`Difficulty: ${lvl.difficulty}`, 270, 215);
         let savedScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
-        ctx.fillStyle = "#00ffff"; ctx.fillText(`Best: ${savedScore}%`, 270, 250);
+        ctx.fillStyle = "#00ffff"; ctx.fillText(`Best attempt: ${savedScore}%`, 270, 250);
 
         drawButton(buttons.prev); drawButton(buttons.next); drawButton(buttons.select, "#4CAF50"); drawButton(buttons.back, "#ff3333");
     } 
@@ -411,22 +434,15 @@ function draw() {
             ctx.beginPath(); ctx.arc(c.x + 10, c.y + 10, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         }
 
-        for (let sp of speedPortals) {
-            ctx.fillStyle = "#ff00ff"; ctx.shadowBlur = 15; ctx.shadowColor = "#ff00ff";
-            ctx.fillRect(sp.x, sp.y, sp.w, sp.h); ctx.shadowBlur = 0;
-        }
-
         for (let o of obstacles) {
             if (o.type === "spike") {
                 ctx.fillStyle = "#ff0055"; ctx.beginPath(); ctx.moveTo(o.x, groundY); ctx.lineTo(o.x + o.width / 2, groundY - o.height); ctx.lineTo(o.x + o.width, groundY); ctx.closePath(); ctx.fill();
-            } else if (o.type === "double-spike" || o.type === "triple-spike") {
-                ctx.fillStyle = "#ff0055"; let count = o.type === "double-spike" ? 2 : 3; let w = o.width / count;
-                for(let j=0; j<count; j++) {
+            } else if (o.type === "double-spike") {
+                ctx.fillStyle = "#ff0055"; let w = o.width / 2;
+                for(let j=0; j<2; j++) {
                     let sx = o.x + (j*w);
                     ctx.beginPath(); ctx.moveTo(sx, groundY); ctx.lineTo(sx + w / 2, groundY - o.height); ctx.lineTo(sx + w, groundY); ctx.closePath(); ctx.fill();
                 }
-            } else if (o.type === "air-spike") {
-                ctx.fillStyle = "#ffcc00"; ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + o.width / 2, o.y - o.height); ctx.lineTo(o.x + o.width, o.y); ctx.closePath(); ctx.fill();
             } else if (o.type === "block") {
                 ctx.fillStyle = "#2d2d2d"; ctx.fillRect(o.x, o.y, o.width, o.height); 
                 ctx.strokeStyle = "#00ffff"; ctx.lineWidth = 1.5; ctx.strokeRect(o.x, o.y, o.width, o.height);
@@ -446,13 +462,14 @@ function draw() {
             ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#ff2a6d"; ctx.font = "bold 36px Arial"; ctx.textAlign = "center";
             ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-            ctx.fillStyle = "#fff"; ctx.font = "18px Arial"; ctx.fillText("Tap to restart", canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillStyle = "#fff"; ctx.font = "18px Arial"; ctx.fillText("Tap / Press space to try again", canvas.width / 2, canvas.height / 2 + 40);
             ctx.textAlign = "start";
         }
         if (isVictory) {
             ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#33ff33"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center";
-            ctx.fillText("LEVEL COMPLETED!", canvas.width / 2, canvas.height / 2);
+            ctx.fillText("LEVEL COMPLETED! 🎉", canvas.width / 2, canvas.height / 2);
+            ctx.fillStyle = "#fff"; ctx.font = "20px Arial"; ctx.fillText(`Coins earned: 🟡 ${levelCoinsCollected}`, canvas.width / 2, canvas.height / 2 + 50);
             ctx.textAlign = "start";
         }
         if (gameState === "PAUSED") {
