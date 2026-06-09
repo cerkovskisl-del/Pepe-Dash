@@ -12,7 +12,7 @@ let isVictory = false;
 let gameMode = "CUBE"; 
 let inputPressed = false;
 
-// Spēles mehānikas mainīgie
+// Game mechanics variables
 let currentSpeed = 7; 
 let levelCoinsCollected = 0; 
 
@@ -23,14 +23,14 @@ let speedPortals = [];
 let particles = [];
 let frameCount = 0;
 
-// 6 PILNĪBĀ ATŠĶIRĪGI LĪMEŅI
+// 6 COMPLETELY DIFFERENT LEVELS
 const levels = [
     {
         name: "1. STEREO MADNESS (Classic)", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 4500, mode: "CUBE", baseSpeed: 6.5,
         setup: function() {
             obstacles.push({ x: 600, type: "spike", width: 30, height: 40 });
             
-            // Bloku kaskāde, uz kuras var uzkāpt
+            // Block cascade to climb on
             obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 80, height: 40 });
             obstacles.push({ x: 1080, type: "block", y: groundY - 80, width: 80, height: 80 });
             obstacles.push({ x: 1400, type: "spike", width: 30, height: 40 });
@@ -110,20 +110,20 @@ const levels = [
     }
 ];
 
-// Pogas izvēlnēm
+// UI Buttons
 const buttons = {
     play: { x: 350, y: 220, w: 200, h: 60, text: "START" },
     prev: { x: 100, y: 220, w: 80, h: 60, text: "<" },
     next: { x: 720, y: 220, w: 80, h: 60, text: ">" },
-    select: { x: 325, y: 320, w: 250, h: 50, text: "SPĒLĒT" },
-    back: { x: 30, y: 30, w: 100, h: 40, text: "ATPAKAĻ" },
+    select: { x: 325, y: 320, w: 250, h: 50, text: "PLAY" },
+    back: { x: 30, y: 30, w: 100, h: 40, text: "BACK" },
     pauseBtn: { x: 840, y: 10, w: 40, h: 40, text: "II" },
-    resume: { x: 350, y: 160, w: 200, h: 50, text: "TURPINĀT" },
-    restart: { x: 350, y: 230, w: 200, h: 50, text: "RESTARTĒT" },
-    exit: { x: 350, y: 300, w: 200, h: 50, text: "UZ MENU" }
+    resume: { x: 350, y: 160, w: 200, h: 50, text: "RESUME" },
+    restart: { x: 350, y: 230, w: 200, h: 50, text: "RESTART" },
+    exit: { x: 350, y: 300, w: 200, h: 50, text: "MENU" }
 };
 
-// Spēlētājs (Pepe)
+// Player (Pepe)
 const player = {
     x: 150, y: groundY - 40, width: 40, height: 40, velocity: 0,
     gravity: 0.7, shipGravity: 0.35, jumpForce: -12.5, shipFlyForce: -0.85, grounded: false, rotation: 0,
@@ -164,7 +164,7 @@ const player = {
     }
 };
 
-// Ievades kontrole
+// Input Control
 canvas.addEventListener("mousedown", (e) => {
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top;
@@ -231,7 +231,7 @@ function update() {
 
     let stoodOnSomething = false;
 
-    // 1. Šķēršļu un bloku loģika
+    // Collision logic
     for (let o of obstacles) {
         o.x -= currentSpeed;
 
@@ -295,7 +295,7 @@ function update() {
         if (particles[i].alpha <= 0) particles.splice(i, 1);
     }
 
-    // Tramplīni
+    // Jump Pads
     for (let p of pads) {
         p.x -= currentSpeed;
         if (player.x + player.width > p.x - p.radius && player.x < p.x + p.radius && player.y + player.height >= p.y - 12 && player.y < p.y) {
@@ -305,7 +305,7 @@ function update() {
         }
     }
 
-    // Monētas
+    // Coins
     for (let i = coins.length - 1; i >= 0; i--) {
         let c = coins[i];
         c.x -= currentSpeed;
@@ -315,7 +315,7 @@ function update() {
         }
     }
 
-    // Portāli
+    // Portals
     for (let i = speedPortals.length - 1; i >= 0; i--) {
         let sp = speedPortals[i];
         sp.x -= currentSpeed;
@@ -346,7 +346,7 @@ function draw() {
     else if (gameState === "LEVEL_SELECT") {
         statsBar.style.display = "none";
         ctx.fillStyle = "#070c1f"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#fff"; ctx.font = "bold 28px Arial"; ctx.fillText("IZVĒLIES LĪMENI", 330, 100);
+        ctx.fillStyle = "#fff"; ctx.font = "bold 28px Arial"; ctx.fillText("SELECT LEVEL", 330, 100);
 
         let lvl = levels[currentLevelIndex];
         ctx.fillStyle = "#111a3a"; ctx.fillRect(250, 140, 400, 150);
@@ -354,9 +354,9 @@ function draw() {
 
         ctx.fillStyle = "#fff"; ctx.font = "18px Arial"; ctx.fillText(lvl.name, 270, 180);
         ctx.fillStyle = lvl.difficulty === "Demon" ? "#ff00ff" : (lvl.difficulty === "Hard" ? "#ff3333" : "#33ff33");
-        ctx.fillText(`Grūtība: ${lvl.difficulty}`, 270, 215);
+        ctx.fillText(`Difficulty: ${lvl.difficulty}`, 270, 215);
         let savedScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
-        ctx.fillStyle = "#00ffff"; ctx.fillText(`Labākais: ${savedScore}%`, 270, 250);
+        ctx.fillStyle = "#00ffff"; ctx.fillText(`Best: ${savedScore}%`, 270, 250);
 
         drawButton(buttons.prev); drawButton(buttons.next); drawButton(buttons.select, "#4CAF50"); drawButton(buttons.back, "#ff3333");
     } 
@@ -369,24 +369,24 @@ function draw() {
 
         for (let p of particles) { ctx.fillStyle = `rgba(78, 240, 93, ${p.alpha})`; ctx.fillRect(p.x, p.y, p.size, p.size); }
 
-        // Tramplīni
+        // Jump Pads
         for (let p of pads) {
             ctx.fillStyle = "#ffcc00"; ctx.beginPath(); ctx.arc(p.x, p.y - 2, p.radius, 0, Math.PI, true); ctx.fill();
         }
 
-        // Monētas
+        // Coins
         for (let c of coins) {
             ctx.fillStyle = "#ffd700"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.arc(c.x + 10, c.y + 10, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         }
 
-        // Portāli
+        // Portals
         for (let sp of speedPortals) {
             ctx.fillStyle = "#ff00ff"; ctx.shadowBlur = 15; ctx.shadowColor = "#ff00ff";
             ctx.fillRect(sp.x, sp.y, sp.w, sp.h); ctx.shadowBlur = 0;
         }
 
-        // Šķēršļu un bloku zīmēšana
+        // Render obstacles
         for (let o of obstacles) {
             if (o.type === "spike") {
                 ctx.fillStyle = "#ff0055"; ctx.beginPath(); ctx.moveTo(o.x, groundY); ctx.lineTo(o.x + o.width / 2, groundY - o.height); ctx.lineTo(o.x + o.width, groundY); ctx.closePath(); ctx.fill();
@@ -408,7 +408,7 @@ function draw() {
 
         ctx.fillStyle = "#000"; ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY); ctx.fillRect(0, 0, canvas.width, 40);
         ctx.strokeStyle = currentLevel.floorColor; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke(); // IZLABOTS ŠEIT
+        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
 
         drawButton(buttons.pauseBtn, "#555");
@@ -416,19 +416,19 @@ function draw() {
         if (isGameOver) {
             ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#ff2a6d"; ctx.font = "bold 36px Arial"; ctx.textAlign = "center";
-            ctx.fillText("SPĒLE BEIGUSIES", canvas.width / 2, canvas.height / 2);
-            ctx.fillStyle = "#fff"; ctx.font = "18px Arial"; ctx.fillText("Klikšķini lai restartētu", canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+            ctx.fillStyle = "#fff"; ctx.font = "18px Arial"; ctx.fillText("Click to restart", canvas.width / 2, canvas.height / 2 + 40);
             ctx.textAlign = "start";
         }
         if (isVictory) {
             ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#33ff33"; ctx.font = "bold 40px Arial"; ctx.textAlign = "center";
-            ctx.fillText("LĪMENIS PABEIGTS!", canvas.width / 2, canvas.height / 2);
+            ctx.fillText("LEVEL COMPLETED!", canvas.width / 2, canvas.height / 2);
             ctx.textAlign = "start";
         }
         if (gameState === "PAUSED") {
             ctx.fillStyle = "rgba(10, 5, 25, 0.85)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#00ffff"; ctx.font = "bold 36px Arial"; ctx.textAlign = "center"; ctx.fillText("PAUZE", canvas.width / 2, 100); ctx.textAlign = "start";
+            ctx.fillStyle = "#00ffff"; ctx.font = "bold 36px Arial"; ctx.textAlign = "center"; ctx.fillText("PAUSED", canvas.width / 2, 100); ctx.textAlign = "start";
             drawButton(buttons.resume, "#33ff33"); drawButton(buttons.restart, "#ffcc00"); drawButton(buttons.exit, "#ff3333");
         }
     }
