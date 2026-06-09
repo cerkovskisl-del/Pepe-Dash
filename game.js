@@ -12,8 +12,11 @@ let isVictory = false;
 let gameMode = "CUBE"; 
 let inputPressed = false;
 
-// Game mechanics variables
-let currentSpeed = 7; 
+// Delta Time mainīgie priekš plūdenas kustības
+let lastTime = 0;
+
+// Spēles bāzes ātrumi
+let currentSpeed = 400; 
 let levelCoinsCollected = 0; 
 
 let obstacles = [];
@@ -22,15 +25,14 @@ let coins = [];
 let speedPortals = [];
 let particles = [];
 let frameCount = 0;
+let particleTimer = 0;
 
-// 6 COMPLETELY DIFFERENT LEVELS
+// 6 LĪMEŅI
 const levels = [
     {
-        name: "1. STEREO MADNESS (Classic)", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 4500, mode: "CUBE", baseSpeed: 6.5,
+        name: "1. STEREO MADNESS (Classic)", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 4500, mode: "CUBE", baseSpeed: 380,
         setup: function() {
             obstacles.push({ x: 600, type: "spike", width: 30, height: 40 });
-            
-            // Block cascade to climb on
             obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 80, height: 40 });
             obstacles.push({ x: 1080, type: "block", y: groundY - 80, width: 80, height: 80 });
             obstacles.push({ x: 1400, type: "spike", width: 30, height: 40 });
@@ -44,7 +46,7 @@ const levels = [
         }
     },
     {
-        name: "2. TIME WARP (Slow Mo)", difficulty: "Normal", bgColor: "#1a2405", floorColor: "#aaff00", length: 4000, mode: "CUBE", baseSpeed: 4.5,
+        name: "2. TIME WARP (Slow Mo)", difficulty: "Normal", bgColor: "#1a2405", floorColor: "#aaff00", length: 4000, mode: "CUBE", baseSpeed: 250,
         setup: function() {
             for (let x = 600; x < 3500; x += 600) {
                 obstacles.push({ x: x, type: "block", y: groundY - 40, width: 60, height: 40 });
@@ -54,7 +56,7 @@ const levels = [
         }
     },
     {
-        name: "3. NITRO DASH (Super Fast)", difficulty: "Hard", bgColor: "#300505", floorColor: "#ff0000", length: 6500, mode: "CUBE", baseSpeed: 11,
+        name: "3. NITRO DASH (Super Fast)", difficulty: "Hard", bgColor: "#300505", floorColor: "#ff0000", length: 6500, mode: "CUBE", baseSpeed: 600,
         setup: function() {
             obstacles.push({ x: 800, type: "spike", width: 30, height: 40 });
             obstacles.push({ x: 1200, type: "block", y: groundY - 60, width: 300, height: 60 });
@@ -66,23 +68,20 @@ const levels = [
         }
     },
     {
-        name: "4. TRAMPOLINE VALLEY", difficulty: "Hard", bgColor: "#05262b", floorColor: "#00ffcc", length: 5000, mode: "CUBE", baseSpeed: 7.5,
+        name: "4. TRAMPOLINE VALLEY", difficulty: "Hard", bgColor: "#05262b", floorColor: "#00ffcc", length: 5000, mode: "CUBE", baseSpeed: 420,
         setup: function() {
             pads.push({ x: 600, y: groundY, radius: 15 });
             obstacles.push({ x: 750, type: "spike", width: 30, height: 40 });
-            
             obstacles.push({ x: 1200, type: "block", y: groundY - 80, width: 80, height: 80 });
             pads.push({ x: 1240, y: groundY - 80, radius: 15 }); 
-            
             obstacles.push({ x: 1800, type: "block", y: groundY - 140, width: 80, height: 140 });
             coins.push({ x: 1240, y: groundY - 150 });
-
             obstacles.push({ x: 2400, type: "triple-spike", width: 90, height: 40 });
             pads.push({ x: 3000, y: groundY, radius: 15 });
         }
     },
     {
-        name: "5. SHIP FLIGHT (Flappy Pepe)", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 6000, mode: "SHIP", baseSpeed: 7.5,
+        name: "5. SHIP FLIGHT (Flappy Pepe)", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 6000, mode: "SHIP", baseSpeed: 420,
         setup: function() {
             for (let x = 600; x < 5500; x += 600) {
                 obstacles.push({ x: x, type: "block", y: 40, width: 60, height: 140 });
@@ -92,25 +91,24 @@ const levels = [
         }
     },
     {
-        name: "6. DEMONIC SPEEDWAY", difficulty: "Demon", bgColor: "#000000", floorColor: "#ff3300", length: 8000, mode: "CUBE", baseSpeed: 8,
+        name: "6. DEMONIC SPEEDWAY", difficulty: "Demon", bgColor: "#000000", floorColor: "#ff3300", length: 8000, mode: "CUBE", baseSpeed: 460,
         setup: function() {
             obstacles.push({ x: 500, type: "triple-spike", width: 90, height: 40 });
             obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 120, height: 40 });
             obstacles.push({ x: 1600, type: "air-spike", y: groundY - 60, width: 30, height: 40 });
             
-            speedPortals.push({ x: 2200, y: groundY - 140, w: 40, h: 140, targetSpeed: 11, toMode: "SHIP" });
+            speedPortals.push({ x: 2200, y: groundY - 140, w: 40, h: 140, targetSpeed: 600, toMode: "SHIP" });
             
             obstacles.push({ x: 2800, type: "block", y: 40, width: 60, height: 160 });
             obstacles.push({ x: 3300, type: "block", y: groundY - 160, width: 60, height: 160 });
             coins.push({ x: 3800, y: 200 });
             
-            speedPortals.push({ x: 5500, y: groundY - 140, w: 40, h: 140, targetSpeed: 7.5, toMode: "CUBE" });
+            speedPortals.push({ x: 5500, y: groundY - 140, w: 40, h: 140, targetSpeed: 420, toMode: "CUBE" });
             obstacles.push({ x: 6200, type: "triple-spike", width: 90, height: 40 });
         }
     }
 ];
 
-// UI Buttons
 const buttons = {
     play: { x: 350, y: 220, w: 200, h: 60, text: "START" },
     prev: { x: 100, y: 220, w: 80, h: 60, text: "<" },
@@ -123,15 +121,15 @@ const buttons = {
     exit: { x: 350, y: 300, w: 200, h: 50, text: "MENU" }
 };
 
-// Player (Pepe)
+// Spēlētājs
 const player = {
     x: 150, y: groundY - 40, width: 40, height: 40, velocity: 0,
-    gravity: 0.7, shipGravity: 0.35, jumpForce: -12.5, shipFlyForce: -0.85, grounded: false, rotation: 0,
+    gravity: 42, shipGravity: 21, jumpForce: -750, shipFlyForce: -52, grounded: false, rotation: 0,
 
-    update() {
+    update(dt) {
         if (gameMode === "CUBE") {
-            this.velocity += this.gravity; 
-            this.y += this.velocity;
+            this.velocity += this.gravity * dt * 60; 
+            this.y += this.velocity * dt;
 
             if (this.y + this.height >= groundY) {
                 this.y = groundY - this.height; 
@@ -140,18 +138,22 @@ const player = {
                 this.rotation = Math.round(this.rotation / (Math.PI / 2)) * (Math.PI / 2);
             } else { 
                 if (!this.grounded) {
-                    this.rotation += 0.01 * currentSpeed; 
+                    this.rotation += 0.6 * dt * (currentSpeed / 100); 
                 }
             }
         } else if (gameMode === "SHIP") {
-            if (inputPressed) this.velocity += this.shipFlyForce; else this.velocity += this.shipGravity;
-            this.velocity = Math.max(-6, Math.min(6, this.velocity)); this.y += this.velocity;
+            if (inputPressed) this.velocity += this.shipFlyForce * dt * 60; else this.velocity += this.shipGravity * dt * 60;
+            this.velocity = Math.max(-360, Math.min(360, this.velocity)); 
+            this.y += this.velocity * dt;
             if (this.y + this.height >= groundY) { this.y = groundY - this.height; this.velocity = 0; }
             if (this.y <= 40) { this.y = 40; this.velocity = 0; }
-            this.rotation = this.velocity * 0.05;
+            this.rotation = this.velocity * 0.003;
         }
-        if (frameCount % 2 === 0) {
+
+        particleTimer += dt;
+        if (particleTimer > 0.03) {
             particles.push({ x: this.x, y: this.y + this.height / 2, size: Math.random() * 6 + 4, alpha: 1 });
+            particleTimer = 0;
         }
     },
     draw() {
@@ -164,10 +166,11 @@ const player = {
     }
 };
 
-// Input Control
-canvas.addEventListener("mousedown", (e) => {
+// Apstrādā klikšķa/skāriena loģiku (Kopīga funkcija datoram un telefonam)
+function handlePress(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top;
+    const mouseX = clientX - rect.left;
+    const mouseY = clientY - rect.top;
 
     if (gameState === "MENU") {
         if (checkClick(mouseX, mouseY, buttons.play)) gameState = "LEVEL_SELECT";
@@ -189,9 +192,26 @@ canvas.addEventListener("mousedown", (e) => {
         else if (checkClick(mouseX, mouseY, buttons.restart)) { gameState = "PLAYING"; resetLevel(); }
         else if (checkClick(mouseX, mouseY, buttons.exit)) gameState = "LEVEL_SELECT";
     }
-});
+}
+
+// DATORA PELE
+canvas.addEventListener("mousedown", (e) => { handlePress(e.clientX, e.clientY); });
 canvas.addEventListener("mouseup", () => { inputPressed = false; });
 
+// TELEFONA TOUCH NOTIKUMI (Pievienots priekš telefoniem)
+canvas.addEventListener("touchstart", (e) => {
+    e.preventDefault(); // Neļauj telefonam pietuvināt/zoomot ekrānu strauju pieskārienu laikā
+    if (e.touches.length > 0) {
+        handlePress(e.touches[0].clientX, e.touches[0].clientY);
+    }
+}, { passive: false });
+
+canvas.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    inputPressed = false;
+}, { passive: false });
+
+// KLAVIATŪRA (Datoram)
 window.addEventListener("keydown", (e) => {
     if (e.code === "KeyP") { gameState = (gameState === "PLAYING") ? "PAUSED" : (gameState === "PAUSED" ? "PLAYING" : gameState); }
     if (e.code === "Space" || e.code === "ArrowUp") {
@@ -221,19 +241,20 @@ function resetLevel() {
     
     obstacles = []; pads = []; coins = []; speedPortals = [];
     currentLevel.setup(); 
+    lastTime = performance.now();
 }
 
-function update() {
+function update(dt) {
     if (gameState !== "PLAYING" || isGameOver || isVictory) return;
 
     frameCount++;
-    distanceTraveled += currentSpeed;
+    let moveAmount = currentSpeed * dt;
+    distanceTraveled += moveAmount;
 
     let stoodOnSomething = false;
 
-    // Collision logic
     for (let o of obstacles) {
-        o.x -= currentSpeed;
+        o.x -= moveAmount;
 
         if (o.type === "block") {
             let hitX = player.x + 2 < o.x + o.width && player.x + player.width - 2 > o.x;
@@ -241,7 +262,7 @@ function update() {
 
             if (hitX && hitY) {
                 let overlapY = (player.y + player.height) - o.y;
-                if (overlapY <= player.velocity + 3 && player.velocity >= 0 && gameMode === "CUBE") {
+                if (overlapY <= (player.velocity * dt) + 4 && player.velocity >= 0 && gameMode === "CUBE") {
                     player.y = o.y - player.height;
                     player.velocity = 0;
                     player.grounded = true;
@@ -273,7 +294,7 @@ function update() {
         player.grounded = false;
     }
 
-    player.update();
+    player.update(dt);
 
     let progress = Math.min(100, Math.floor((distanceTraveled / currentLevel.length) * 100));
     document.getElementById("scoreText").innerText = `PROGRESS: ${progress}% | 🟡:${levelCoinsCollected}/2`;
@@ -291,34 +312,34 @@ function update() {
     }
 
     for (let i = particles.length - 1; i >= 0; i--) {
-        particles[i].x -= currentSpeed - 2; particles[i].alpha -= 0.04;
+        particles[i].x -= (currentSpeed - 100) * dt; particles[i].alpha -= 2.0 * dt;
         if (particles[i].alpha <= 0) particles.splice(i, 1);
     }
 
-    // Jump Pads
+    // Tramplīni
     for (let p of pads) {
-        p.x -= currentSpeed;
+        p.x -= moveAmount;
         if (player.x + player.width > p.x - p.radius && player.x < p.x + p.radius && player.y + player.height >= p.y - 12 && player.y < p.y) {
-            player.velocity = player.jumpForce * 1.35; 
+            player.velocity = player.jumpForce * 1.15; 
             player.grounded = false;
             player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
         }
     }
 
-    // Coins
+    // Monētas
     for (let i = coins.length - 1; i >= 0; i--) {
         let c = coins[i];
-        c.x -= currentSpeed;
+        c.x -= moveAmount;
         if (player.x < c.x + 20 && player.x + player.width > c.x && player.y < c.y + 20 && player.y + player.height > c.y) {
             levelCoinsCollected++;
             coins.splice(i, 1);
         }
     }
 
-    // Portals
+    // Portāli
     for (let i = speedPortals.length - 1; i >= 0; i--) {
         let sp = speedPortals[i];
-        sp.x -= currentSpeed;
+        sp.x -= moveAmount;
         if (player.x + player.width > sp.x && player.x < sp.x + sp.w && player.y + player.height > sp.y && player.y < sp.y + sp.h) {
             currentSpeed = sp.targetSpeed;
             gameMode = sp.toMode;
@@ -369,24 +390,20 @@ function draw() {
 
         for (let p of particles) { ctx.fillStyle = `rgba(78, 240, 93, ${p.alpha})`; ctx.fillRect(p.x, p.y, p.size, p.size); }
 
-        // Jump Pads
         for (let p of pads) {
             ctx.fillStyle = "#ffcc00"; ctx.beginPath(); ctx.arc(p.x, p.y - 2, p.radius, 0, Math.PI, true); ctx.fill();
         }
 
-        // Coins
         for (let c of coins) {
             ctx.fillStyle = "#ffd700"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.arc(c.x + 10, c.y + 10, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         }
 
-        // Portals
         for (let sp of speedPortals) {
             ctx.fillStyle = "#ff00ff"; ctx.shadowBlur = 15; ctx.shadowColor = "#ff00ff";
             ctx.fillRect(sp.x, sp.y, sp.w, sp.h); ctx.shadowBlur = 0;
         }
 
-        // Render obstacles
         for (let o of obstacles) {
             if (o.type === "spike") {
                 ctx.fillStyle = "#ff0055"; ctx.beginPath(); ctx.moveTo(o.x, groundY); ctx.lineTo(o.x + o.width / 2, groundY - o.height); ctx.lineTo(o.x + o.width, groundY); ctx.closePath(); ctx.fill();
@@ -417,7 +434,7 @@ function draw() {
             ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#ff2a6d"; ctx.font = "bold 36px Arial"; ctx.textAlign = "center";
             ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-            ctx.fillStyle = "#fff"; ctx.font = "18px Arial"; ctx.fillText("Click to restart", canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillStyle = "#fff"; ctx.font = "18px Arial"; ctx.fillText("Tap to restart", canvas.width / 2, canvas.height / 2 + 40);
             ctx.textAlign = "start";
         }
         if (isVictory) {
@@ -434,5 +451,17 @@ function draw() {
     }
 }
 
-function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
-gameLoop();
+function gameLoop(timestamp) {
+    let dt = (timestamp - lastTime) / 1000;
+    if (dt > 0.1) dt = 0.1; 
+    lastTime = timestamp;
+
+    update(dt);
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+requestAnimationFrame((timestamp) => {
+    lastTime = timestamp;
+    requestAnimationFrame(gameLoop);
+});
