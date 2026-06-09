@@ -19,7 +19,7 @@ let levelCoinsCollected = 0;
 
 // Infinity Mode tracking
 let infinityHighScore = parseInt(localStorage.getItem("pepeInfinityBest")) || 0;
-let nextInfinityObstacleX = 500; 
+let nextInfinityObstacleX = 600; 
 
 // Coin economy
 let totalCoins = parseInt(localStorage.getItem("pepeTotalCoins")) || 0;
@@ -38,11 +38,11 @@ const skins = {
 let obstacles = [];
 let pads = [];
 let coins = [];
-let portals = []; // Jauns masīvs kuģīša/kubiņa portāliem
+let portals = []; 
 let particles = [];
 let frameCount = 0;
 let particleTimer = 0;
-let portalRotation = 0; // Animācijai
+let portalRotation = 0; 
 
 function checkOrientation() {
     if (window.innerHeight > window.innerWidth) {
@@ -62,131 +62,111 @@ window.addEventListener("resize", checkOrientation);
 window.addEventListener("orientationchange", checkOrientation);
 checkOrientation();
 
-// LĪMEŅI (Atstarpes ir samazinātas, lai spēle būtu blīvāka un interesantāka)
+// SABALANSĒTI LĪMEŅI (Atstarpes salabotas: 300-450 pikseļi, lai nav par tuvu un nav par tālu)
 const levels = [
     {
-        name: "1. STEREO MADNESS", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 2400, mode: "CUBE", baseSpeed: 350,
+        name: "1. STEREO MADNESS", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 2800, mode: "CUBE", baseSpeed: 350,
+        setup: function() {
+            obstacles.push({ x: 550, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 900, type: "block", y: groundY - 40, width: 80, height: 40 });
+            coins.push({ x: 940, y: groundY - 90 }); 
+            obstacles.push({ x: 1250, type: "spike", width: 30, height: 40 });
+            
+            pads.push({ x: 1600, y: groundY, radius: 15 });
+            obstacles.push({ x: 1950, type: "double-spike", width: 60, height: 40 });
+            
+            obstacles.push({ x: 2300, type: "block", y: groundY - 40, width: 40, height: 40 });
+            obstacles.push({ x: 2340, type: "block", y: groundY - 80, width: 40, height: 40 });
+            coins.push({ x: 2340, y: groundY - 140 });
+            
+            obstacles.push({ x: 2650, type: "spike", width: 30, height: 40 });
+        }
+    },
+    {
+        name: "2. TRAMPOLINE VALLEY", difficulty: "Normal", bgColor: "#05262b", floorColor: "#00ffcc", length: 3000, mode: "CUBE", baseSpeed: 380,
+        setup: function() {
+            pads.push({ x: 550, y: groundY, radius: 15 });
+            obstacles.push({ x: 900, type: "spike", width: 30, height: 40 });
+            
+            obstacles.push({ x: 1250, type: "block", y: groundY - 40, width: 120, height: 40 });
+            pads.push({ x: 1310, y: groundY - 40, radius: 15 });
+            coins.push({ x: 1310, y: groundY - 120 });
+
+            obstacles.push({ x: 1650, type: "double-spike", width: 60, height: 40 });
+            pads.push({ x: 2000, y: groundY, radius: 15 });
+            obstacles.push({ x: 2350, type: "block", y: groundY - 60, width: 80, height: 60 });
+            coins.push({ x: 2370, y: groundY - 120 });
+            
+            obstacles.push({ x: 2700, type: "spike", width: 30, height: 40 });
+        }
+    },
+    {
+        name: "3. SHIP FLIGHT", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 3200, mode: "SHIP", baseSpeed: 390,
+        setup: function() {
+            obstacles.push({ x: 550, type: "block", y: 40, width: 60, height: 140 });
+            obstacles.push({ x: 950, type: "block", y: groundY - 140, width: 60, height: 140 });
+            coins.push({ x: 750, y: 200 });
+
+            obstacles.push({ x: 1350, type: "block", y: 40, width: 80, height: 180 });
+            obstacles.push({ x: 1750, type: "block", y: groundY - 180, width: 80, height: 180 });
+            coins.push({ x: 1550, y: 250 });
+
+            obstacles.push({ x: 2150, type: "block", y: 120, width: 50, height: 120 });
+            obstacles.push({ x: 2550, type: "block", y: 40, width: 60, height: 140 });
+            obstacles.push({ x: 2950, type: "block", y: groundY - 140, width: 60, height: 140 });
+        }
+    },
+    {
+        name: "4. PORTAL SWITCH", difficulty: "Hard", bgColor: "#3d1111", floorColor: "#ff3333", length: 3400, mode: "CUBE", baseSpeed: 410,
+        setup: function() {
+            obstacles.push({ x: 550, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 900, type: "double-spike", width: 60, height: 40 });
+            
+            portals.push({ x: 1200, y: groundY - 140, targetMode: "SHIP" });
+            obstacles.push({ x: 1550, type: "block", y: 40, width: 50, height: 120 });
+            obstacles.push({ x: 1900, type: "block", y: groundY - 120, width: 50, height: 120 });
+            coins.push({ x: 1720, y: 200 });
+            
+            portals.push({ x: 2200, y: groundY - 140, targetMode: "CUBE" });
+            obstacles.push({ x: 2550, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 2850, y: groundY, radius: 15 });
+        }
+    },
+    {
+        name: "5. COSMIC TUNNEL", difficulty: "Insane", bgColor: "#02162e", floorColor: "#0088ff", length: 3500, mode: "SHIP", baseSpeed: 430,
+        setup: function() {
+            obstacles.push({ x: 550, type: "block", y: 40, width: 100, height: 200 });
+            obstacles.push({ x: 950, type: "block", y: groundY - 200, width: 100, height: 200 });
+            coins.push({ x: 1250, y: 150 });
+            obstacles.push({ x: 1550, type: "block", y: 40, width: 50, height: 120 });
+            obstacles.push({ x: 1850, type: "block", y: groundY - 120, width: 50, height: 120 });
+            obstacles.push({ x: 2200, type: "block", y: 130, width: 200, height: 80 });
+            coins.push({ x: 2300, y: 70 });
+            obstacles.push({ x: 2650, type: "block", y: 40, width: 80, height: 220 });
+            obstacles.push({ x: 3050, type: "block", y: groundY - 220, width: 80, height: 220 });
+        }
+    },
+    {
+        name: "6. DEMONIC CLIMAX", difficulty: "Demon", bgColor: "#1a0202", floorColor: "#ff0000", length: 3600, mode: "CUBE", baseSpeed: 460,
         setup: function() {
             obstacles.push({ x: 500, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 750, type: "block", y: groundY - 40, width: 80, height: 40 });
-            coins.push({ x: 790, y: groundY - 90 }); 
-            obstacles.push({ x: 950, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 850, type: "double-spike", width: 60, height: 40 });
+            obstacles.push({ x: 1200, type: "block", y: groundY - 40, width: 40, height: 40 });
+            obstacles.push({ x: 1500, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 1800, y: groundY, radius: 15 });
             
-            pads.push({ x: 1200, y: groundY, radius: 15 });
-            obstacles.push({ x: 1350, type: "double-spike", width: 60, height: 40 });
+            portals.push({ x: 2100, y: groundY - 140, targetMode: "SHIP" });
+            obstacles.push({ x: 2450, type: "block", y: 40, width: 60, height: 160 });
+            obstacles.push({ x: 2800, type: "block", y: groundY - 160, width: 60, height: 160 });
             
-            obstacles.push({ x: 1600, type: "block", y: groundY - 40, width: 40, height: 40 });
-            obstacles.push({ x: 1640, type: "block", y: groundY - 80, width: 40, height: 40 });
-            coins.push({ x: 1640, y: groundY - 140 });
-            
-            obstacles.push({ x: 1900, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 2100, type: "block", y: groundY - 40, width: 120, height: 40 });
-        }
-    },
-    {
-        name: "2. TRAMPOLINE VALLEY", difficulty: "Normal", bgColor: "#05262b", floorColor: "#00ffcc", length: 2600, mode: "CUBE", baseSpeed: 380,
-        setup: function() {
-            pads.push({ x: 500, y: groundY, radius: 15 });
-            obstacles.push({ x: 680, type: "spike", width: 30, height: 40 });
-            
-            obstacles.push({ x: 950, type: "block", y: groundY - 40, width: 120, height: 40 });
-            pads.push({ x: 1010, y: groundY - 40, radius: 15 });
-            coins.push({ x: 1010, y: groundY - 120 });
-
-            obstacles.push({ x: 1350, type: "double-spike", width: 60, height: 40 });
-            pads.push({ x: 1600, y: groundY, radius: 15 });
-            obstacles.push({ x: 1850, type: "block", y: groundY - 60, width: 80, height: 60 });
-            coins.push({ x: 1870, y: groundY - 120 });
-            
-            obstacles.push({ x: 2100, type: "spike", width: 30, height: 40 });
-            pads.push({ x: 2250, y: groundY, radius: 15 });
-            obstacles.push({ x: 2350, type: "double-spike", width: 60, height: 40 });
-        }
-    },
-    {
-        name: "3. SHIP FLIGHT", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 2800, mode: "SHIP", baseSpeed: 390,
-        setup: function() {
-            obstacles.push({ x: 500, type: "block", y: 40, width: 60, height: 140 });
-            obstacles.push({ x: 750, type: "block", y: groundY - 140, width: 60, height: 140 });
-            coins.push({ x: 620, y: 200 });
-
-            obstacles.push({ x: 1100, type: "block", y: 40, width: 80, height: 180 });
-            obstacles.push({ x: 1400, type: "block", y: groundY - 180, width: 80, height: 180 });
-            coins.push({ x: 1250, y: 250 });
-
-            obstacles.push({ x: 1750, type: "block", y: 120, width: 50, height: 120 });
-            obstacles.push({ x: 2050, type: "block", y: 40, width: 60, height: 140 });
-            obstacles.push({ x: 2300, type: "block", y: groundY - 140, width: 60, height: 140 });
-            
-            obstacles.push({ x: 2550, type: "block", y: 40, width: 40, height: 120 });
-            obstacles.push({ x: 2550, type: "block", y: groundY - 120, width: 40, height: 120 });
-            coins.push({ x: 2560, y: 200 });
-        }
-    },
-    {
-        name: "4. PORTAL SWITCH", difficulty: "Hard", bgColor: "#3d1111", floorColor: "#ff3333", length: 3000, mode: "CUBE", baseSpeed: 410,
-        setup: function() {
-            // Sākas kā Cube, tad pārvēršas par kuģi un atpakaļ
-            obstacles.push({ x: 450, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 650, type: "double-spike", width: 60, height: 40 });
-            
-            // Portāls uz SHIP mode
-            portals.push({ x: 850, y: groundY - 100, targetMode: "SHIP" });
-            obstacles.push({ x: 1100, type: "block", y: 40, width: 50, height: 120 });
-            obstacles.push({ x: 1350, type: "block", y: groundY - 120, width: 50, height: 120 });
-            coins.push({ x: 1220, y: 200 });
-            
-            // Portāls atpakaļ uz CUBE mode
-            portals.push({ x: 1600, y: groundY - 100, targetMode: "CUBE" });
-            obstacles.push({ x: 1850, type: "spike", width: 30, height: 40 });
-            pads.push({ x: 2050, y: groundY, radius: 15 });
-            obstacles.push({ x: 2250, type: "block", y: groundY - 60, width: 80, height: 60 });
-            coins.push({ x: 2290, y: groundY - 110 });
-            obstacles.push({ x: 2550, type: "double-spike", width: 60, height: 40 });
-        }
-    },
-    {
-        name: "5. COSMIC TUNNEL", difficulty: "Insane", bgColor: "#02162e", floorColor: "#0088ff", length: 3200, mode: "SHIP", baseSpeed: 430,
-        setup: function() {
-            obstacles.push({ x: 500, type: "block", y: 40, width: 100, height: 200 });
-            obstacles.push({ x: 800, type: "block", y: groundY - 200, width: 100, height: 200 });
-            coins.push({ x: 1050, y: 100 });
-            obstacles.push({ x: 1250, type: "block", y: 40, width: 50, height: 120 });
-            obstacles.push({ x: 1450, type: "block", y: groundY - 120, width: 50, height: 120 });
-            obstacles.push({ x: 1700, type: "block", y: 130, width: 200, height: 80 });
-            coins.push({ x: 1800, y: 80 });
-            obstacles.push({ x: 2100, type: "block", y: 40, width: 80, height: 220 });
-            obstacles.push({ x: 2450, type: "block", y: groundY - 220, width: 80, height: 220 });
-            obstacles.push({ x: 2750, type: "block", y: 100, width: 40, height: 140 });
-        }
-    },
-    {
-        name: "6. DEMONIC CLIMAX", difficulty: "Demon", bgColor: "#1a0202", floorColor: "#ff0000", length: 3400, mode: "CUBE", baseSpeed: 460,
-        setup: function() {
-            obstacles.push({ x: 450, type: "spike", width: 30, height: 40 });
-            obstacles.push({ x: 650, type: "double-spike", width: 60, height: 40 });
-            obstacles.push({ x: 850, type: "block", y: groundY - 40, width: 40, height: 40 });
-            obstacles.push({ x: 1000, type: "spike", width: 30, height: 40 });
-            pads.push({ x: 1200, y: groundY, radius: 15 });
-            obstacles.push({ x: 1350, type: "block", y: groundY - 80, width: 40, height: 80 });
-            obstacles.push({ x: 1550, type: "double-spike", width: 60, height: 40 });
-            coins.push({ x: 1580, y: groundY - 90 });
-            
-            portals.push({ x: 1750, y: groundY - 100, targetMode: "SHIP" });
-            obstacles.push({ x: 2000, type: "block", y: 40, width: 60, height: 160 });
-            obstacles.push({ x: 2250, type: "block", y: groundY - 160, width: 60, height: 160 });
-            
-            portals.push({ x: 2500, y: groundY - 100, targetMode: "CUBE" });
-            obstacles.push({ x: 2750, type: "block", y: groundY - 40, width: 80, height: 40 });
-            obstacles.push({ x: 2790, type: "block", y: groundY - 80, width: 40, height: 40 });
-            obstacles.push({ x: 3050, type: "spike", width: 30, height: 40 });
-            coins.push({ x: 3050, y: groundY - 100 });
+            portals.push({ x: 3100, y: groundY - 140, targetMode: "CUBE" });
+            obstacles.push({ x: 3400, type: "double-spike", width: 60, height: 40 });
         }
     },
     {
         name: "INFINITY ENDLESS", difficulty: "Variable", bgColor: "#1f1f1f", floorColor: "#ffffff", length: Infinity, mode: "DYNAMIC", baseSpeed: 360,
         setup: function() {
-            nextInfinityObstacleX = 500;
+            nextInfinityObstacleX = 600;
             generateNextInfinityObstacle();
             generateNextInfinityObstacle();
             generateNextInfinityObstacle();
@@ -264,13 +244,12 @@ const player = {
 
 function generateNextInfinityObstacle() {
     let roll = Math.random();
-    let distanceGap = Math.random() * 150 + 200; // Mazākas atstarpes arī bezgalīgajā režīmā
+    let distanceGap = Math.random() * 100 + 320; // Sabalansēta bezgalīgā režīma atstarpe
 
-    // Reizēm bezgalīgajā režīmā nejauši izveidojam režīma maiņas portālu
-    if (Math.random() < 0.15 && nextInfinityObstacleX > 1000) {
+    if (Math.random() < 0.12 && nextInfinityObstacleX > 1200) {
         let nextMode = (gameMode === "CUBE") ? "SHIP" : "CUBE";
-        portals.push({ x: nextInfinityObstacleX, y: groundY - 120, targetMode: nextMode });
-        nextInfinityObstacleX += 300;
+        portals.push({ x: nextInfinityObstacleX, y: groundY - 140, targetMode: nextMode });
+        nextInfinityObstacleX += 350;
         return;
     }
 
@@ -281,17 +260,15 @@ function generateNextInfinityObstacle() {
         } else if (roll < 0.75) {
             let blockHeight = Math.random() > 0.5 ? 40 : 80;
             obstacles.push({ x: nextInfinityObstacleX, type: "block", y: groundY - blockHeight, width: 60, height: blockHeight });
-            if (Math.random() > 0.5) coins.push({ x: nextInfinityObstacleX + 15, y: groundY - blockHeight - 50 });
         } else {
             pads.push({ x: nextInfinityObstacleX, y: groundY, radius: 15 });
-            obstacles.push({ x: nextInfinityObstacleX + 140, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: nextInfinityObstacleX + 180, type: "spike", width: 30, height: 40 });
         }
     } else {
-        let gapY = Math.random() * 100 + 110; 
-        let topWallHeight = Math.random() * 130 + 40;
+        let gapY = Math.random() * 90 + 120; 
+        let topWallHeight = Math.random() * 120 + 40;
         obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40, width: 60, height: topWallHeight });
         obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40 + topWallHeight + gapY, width: 60, height: groundY - (40 + topWallHeight + gapY) });
-        if (Math.random() > 0.5) coins.push({ x: nextInfinityObstacleX + 15, y: 40 + topWallHeight + (gapY / 2) - 10 });
     }
 
     nextInfinityObstacleX += distanceGap;
@@ -395,13 +372,13 @@ function update(dt) {
     if (gameState !== "PLAYING" || isGameOver || isVictory) return;
 
     frameCount++;
-    portalRotation += 4 * dt; // Portālu griešanās animācijai
+    portalRotation += 4 * dt; 
     let moveAmount = currentSpeed * dt;
     distanceTraveled += moveAmount;
     let stoodOnSomething = false;
 
     if (currentLevel.length === Infinity) {
-        currentSpeed = 360 + Math.floor(distanceTraveled / 180);
+        currentSpeed = 360 + Math.floor(distanceTraveled / 200);
         if (obstacles.length > 0 && obstacles[0].x < -200) obstacles.shift();
         if (pads.length > 0 && pads[0].x < -200) pads.shift();
         if (coins.length > 0 && coins[0].x < -200) coins.shift();
@@ -412,30 +389,40 @@ function update(dt) {
         }
     }
 
-    // Portālu loģika un kustība
     for (let p of portals) {
         p.x -= moveAmount;
-        // Sadursme ar portālu (Aktivizē SHIP vai CUBE režīmu)
         if (player.x + player.width > p.x && player.x < p.x + 40 && player.y + player.height > p.y && player.y < p.y + 120) {
             if (gameMode !== p.targetMode) {
                 gameMode = p.targetMode;
-                player.velocity = 0; // Nobalansē pāreju
+                player.velocity = 0; 
             }
         }
     }
 
+    // --- PILNĪBĀ PĀRSTRĀDĀTA UN DROŠA SADURSMJU SISTĒMA BLOKIEM ---
     for (let o of obstacles) {
         o.x -= moveAmount;
         if (o.type === "block") {
-            let hitX = player.x + 2 < o.x + o.width && player.x + player.width - 2 > o.x;
+            let hitX = player.x < o.x + o.width && player.x + player.width > o.x;
             let hitY = player.y < o.y + o.height && player.y + player.height > o.y;
+
             if (hitX && hitY) {
-                let overlapY = (player.y + player.height) - o.y;
-                if (overlapY <= (player.velocity * dt) + 4 && player.velocity >= 0 && gameMode === "CUBE") {
-                    player.y = o.y - player.height; player.velocity = 0; player.grounded = true; stoodOnSomething = true;
-                } else { isGameOver = true; }
+                // Aprēķinām, no kuras puses spēlētājs saskaras ar bloku
+                let prevPlayerBottom = player.y + player.height - (player.velocity * dt);
+                
+                // Ja spēlētājs pirms šī kadra bija virs bloka, viņš droši piezemējas
+                if (prevPlayerBottom <= o.y + 6 && player.velocity >= 0 && gameMode === "CUBE") {
+                    player.y = o.y - player.height; 
+                    player.velocity = 0; 
+                    player.grounded = true; 
+                    stoodOnSomething = true;
+                } else { 
+                    // Jebkura cita sadursme (no sāna vai apakšas) nozīmē nāvi
+                    isGameOver = true; 
+                }
             }
         } else {
+            // Spikes (Dzeloņu) sadursmes
             let hitX = player.x + 6 < o.x + o.width && player.x + player.width - 6 > o.x;
             let hitY = player.y + player.height > groundY - o.height && player.y < groundY;
             if (hitX && hitY) isGameOver = true;
@@ -581,7 +568,6 @@ function draw() {
 
         for (let p of particles) { ctx.fillStyle = `rgba(78, 240, 93, ${p.alpha})`; ctx.fillRect(p.x, p.y, p.size, p.size); }
 
-        // --- FINIŠA LĪNIJA ---
         if (currentLevel.length !== Infinity) {
             let finishLineX = (currentLevel.length - distanceTraveled) + player.x;
             if (finishLineX < canvas.width + 100) {
@@ -594,44 +580,29 @@ function draw() {
             }
         }
 
-        // --- JAUNA PORTĀLU VIZUALIZĀCIJA (Neona ovāli kā Geometry Dash) ---
+        // --- GEOMETRY DASH STILA PORTĀLI ---
         for (let p of portals) {
-            ctx.save();
-            ctx.translate(p.x + 20, p.y + 60);
-            
-            // Portāla krāsa atkarībā no tā, uz ko tas maina režīmu
+            ctx.save(); ctx.translate(p.x + 20, p.y + 60);
             let portalColor = (p.targetMode === "SHIP") ? "#ff6600" : "#00ff33"; 
-            
-            // Ārējais neona spīdums
-            ctx.shadowBlur = 15; ctx.shadowColor = portalColor;
-            ctx.fillStyle = portalColor;
+            ctx.shadowBlur = 15; ctx.shadowColor = portalColor; ctx.fillStyle = portalColor;
             ctx.beginPath(); ctx.ellipse(0, 0, 20, 60, 0, 0, Math.PI * 2); ctx.fill();
-            
-            // Iekšējais tumšais caurums
             ctx.shadowBlur = 0; ctx.fillStyle = "#050510";
             ctx.beginPath(); ctx.ellipse(0, 0, 12, 50, 0, 0, Math.PI * 2); ctx.fill();
-
-            // Rotējoši stari / daļiņas portāla iekšpusē un ārpusē
             ctx.strokeStyle = portalColor; ctx.lineWidth = 3; ctx.rotate(portalRotation);
             for(let i=0; i<4; i++) {
                 ctx.rotate(Math.PI / 2); ctx.beginPath(); ctx.moveTo(0, -45); ctx.lineTo(0, -55); ctx.stroke();
             }
             ctx.restore();
-            
-            // Režīma teksts virs portāla aizsardzībai
             ctx.fillStyle = "#fff"; ctx.font = "bold 11px Arial"; ctx.textAlign = "center";
             ctx.fillText(p.targetMode, p.x + 20, p.y - 10); ctx.textAlign = "start";
         }
 
-        // --- JAUNS BATUTU (JUMP PADS) DIZAINS (Ar atsperes mehānismu) ---
+        // --- BATUTI AR ATSPERES MEHĀNISMU ---
         for (let p of pads) {
-            // Mehāniskā pamatne un atspere
             ctx.fillStyle = "#555"; ctx.fillRect(p.x - 18, p.y - 4, 36, 4);
             ctx.strokeStyle = "#aaa"; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.moveTo(p.x - 10, p.y - 4); ctx.lineTo(p.x - 5, p.y - 10); ctx.lineTo(p.x, p.y - 4);
             ctx.lineTo(p.x + 5, p.y - 10); ctx.lineTo(p.x + 10, p.y - 4); ctx.stroke();
-
-            // Spilgti dzeltenā / oranžā augšdaļa lēcienam
             ctx.fillStyle = "#ffaa00"; ctx.beginPath(); ctx.arc(p.x, p.y - 10, p.radius, 0, Math.PI, true); ctx.fill();
             ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
         }
@@ -665,7 +636,7 @@ function draw() {
 
         ctx.fillStyle = "#000"; ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY); ctx.fillRect(0, 0, canvas.width, 40);
         ctx.strokeStyle = currentLevel.floorColor; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); stroke();
         ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
 
         drawButton(buttons.pauseBtn, "#555");
