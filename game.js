@@ -6,7 +6,7 @@ const rotateWarning = document.getElementById("rotateWarning");
 let gameState = "MENU"; 
 const groundY = 370;
 let currentLevel = null;
-let currentLevelIndex = 0;
+let currentLevelIndex = 0; // 0-5 for Levels, 6 for Infinity Mode
 let distanceTraveled = 0;
 let isGameOver = false;
 let isVictory = false;
@@ -16,6 +16,10 @@ let inputPressed = false;
 let lastTime = 0;
 let currentSpeed = 400; 
 let levelCoinsCollected = 0; 
+
+// Infinity Mode specific tracking variables
+let infinityHighScore = parseInt(localStorage.getItem("pepeInfinityBest")) || 0;
+let nextInfinityObstacleX = 600; 
 
 // Coin economy
 let totalCoins = parseInt(localStorage.getItem("pepeTotalCoins")) || 0;
@@ -34,7 +38,6 @@ const skins = {
 let obstacles = [];
 let pads = [];
 let coins = [];
-let speedPortals = [];
 let particles = [];
 let frameCount = 0;
 let particleTimer = 0;
@@ -58,7 +61,7 @@ window.addEventListener("resize", checkOrientation);
 window.addEventListener("orientationchange", checkOrientation);
 checkOrientation();
 
-// Level setup - Lengths shortened and objects balanced right to the end
+// 6 Structured Levels + Metadata for Infinity Mode
 const levels = [
     {
         name: "1. STEREO MADNESS", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 3500, mode: "CUBE", baseSpeed: 350,
@@ -67,15 +70,11 @@ const levels = [
             obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 80, height: 40 });
             obstacles.push({ x: 1400, type: "spike", width: 30, height: 40 });
             coins.push({ x: 1040, y: groundY - 90 }); 
-            
             pads.push({ x: 1800, y: groundY, radius: 15 });
             obstacles.push({ x: 2000, type: "double-spike", width: 60, height: 40 });
-            
             obstacles.push({ x: 2400, type: "block", y: groundY - 40, width: 40, height: 40 });
             obstacles.push({ x: 2440, type: "block", y: groundY - 80, width: 40, height: 40 });
             coins.push({ x: 2440, y: groundY - 140 });
-            
-            // Final obstacles right before the finish
             obstacles.push({ x: 2900, type: "spike", width: 30, height: 40 });
             obstacles.push({ x: 3100, type: "block", y: groundY - 40, width: 120, height: 40 });
         }
@@ -85,17 +84,13 @@ const levels = [
         setup: function() {
             pads.push({ x: 600, y: groundY, radius: 15 });
             obstacles.push({ x: 800, type: "spike", width: 30, height: 40 });
-            
             obstacles.push({ x: 1300, type: "block", y: groundY - 40, width: 120, height: 40 });
             pads.push({ x: 1360, y: groundY - 40, radius: 15 });
             coins.push({ x: 1360, y: groundY - 120 });
-
             obstacles.push({ x: 1900, type: "double-spike", width: 60, height: 40 });
             pads.push({ x: 2300, y: groundY, radius: 15 });
             obstacles.push({ x: 2700, type: "block", y: groundY - 60, width: 80, height: 60 });
             coins.push({ x: 2720, y: groundY - 120 });
-            
-            // Final challenge stretch
             obstacles.push({ x: 3100, type: "spike", width: 30, height: 40 });
             pads.push({ x: 3300, y: groundY, radius: 15 });
             obstacles.push({ x: 3450, type: "double-spike", width: 60, height: 40 });
@@ -107,19 +102,84 @@ const levels = [
             obstacles.push({ x: 700, type: "block", y: 40, width: 60, height: 140 });
             obstacles.push({ x: 1100, type: "block", y: groundY - 140, width: 60, height: 140 });
             coins.push({ x: 900, y: 200 });
-
             obstacles.push({ x: 1600, type: "block", y: 40, width: 80, height: 180 });
             obstacles.push({ x: 2100, type: "block", y: groundY - 180, width: 80, height: 180 });
             coins.push({ x: 1850, y: 250 });
-
             obstacles.push({ x: 2600, type: "block", y: 120, width: 50, height: 120 });
             obstacles.push({ x: 3100, type: "block", y: 40, width: 60, height: 140 });
             obstacles.push({ x: 3500, type: "block", y: groundY - 140, width: 60, height: 140 });
-            
-            // Final obstacle tunnel
             obstacles.push({ x: 3800, type: "block", y: 40, width: 40, height: 120 });
             obstacles.push({ x: 3800, type: "block", y: groundY - 120, width: 40, height: 120 });
             coins.push({ x: 3810, y: 200 });
+        }
+    },
+    {
+        name: "4. JUMP MACHINE", difficulty: "Hard", bgColor: "#3d1111", floorColor: "#ff3333", length: 4000, mode: "CUBE", baseSpeed: 410,
+        setup: function() {
+            obstacles.push({ x: 500, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 800, type: "double-spike", width: 60, height: 40 });
+            obstacles.push({ x: 1200, type: "block", y: groundY - 40, width: 40, height: 40 });
+            obstacles.push({ x: 1240, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 1600, y: groundY, radius: 15 });
+            obstacles.push({ x: 1900, type: "block", y: groundY - 80, width: 120, height: 20 });
+            coins.push({ x: 1950, y: groundY - 130 });
+            obstacles.push({ x: 2300, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 2600, y: groundY, radius: 15 });
+            obstacles.push({ x: 2900, type: "double-spike", width: 60, height: 40 });
+            obstacles.push({ x: 3300, type: "block", y: groundY - 40, width: 80, height: 40 });
+            obstacles.push({ x: 3340, type: "spike", width: 30, height: 40 });
+            coins.push({ x: 3350, y: groundY - 90 });
+        }
+    },
+    {
+        name: "5. COSMIC TUNNEL", difficulty: "Insane", bgColor: "#02162e", floorColor: "#0088ff", length: 4600, mode: "SHIP", baseSpeed: 430,
+        setup: function() {
+            // Tight alternating spaces for ship mode
+            obstacles.push({ x: 600, type: "block", y: 40, width: 100, height: 200 });
+            obstacles.push({ x: 1000, type: "block", y: groundY - 200, width: 100, height: 200 });
+            coins.push({ x: 1300, y: 100 });
+            obstacles.push({ x: 1500, type: "block", y: 40, width: 50, height: 120 });
+            obstacles.push({ x: 1700, type: "block", y: groundY - 120, width: 50, height: 120 });
+            obstacles.push({ x: 2000, type: "block", y: 130, width: 200, height: 80 });
+            coins.push({ x: 2100, y: 80 });
+            coins.push({ x: 2100, y: 300 });
+            obstacles.push({ x: 2500, type: "block", y: 40, width: 80, height: 220 });
+            obstacles.push({ x: 2900, type: "block", y: groundY - 220, width: 80, height: 220 });
+            obstacles.push({ x: 3400, type: "block", y: 100, width: 40, height: 140 });
+            obstacles.push({ x: 3800, type: "block", y: 40, width: 120, height: 160 });
+            obstacles.push({ x: 4100, type: "block", y: groundY - 160, width: 120, height: 160 });
+        }
+    },
+    {
+        name: "6. DEMONIC CLIMAX", difficulty: "Demon", bgColor: "#1a0202", floorColor: "#ff0000", length: 5000, mode: "CUBE", baseSpeed: 460,
+        setup: function() {
+            obstacles.push({ x: 500, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 800, type: "double-spike", width: 60, height: 40 });
+            obstacles.push({ x: 1100, type: "block", y: groundY - 40, width: 40, height: 40 });
+            obstacles.push({ x: 1300, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 1600, y: groundY, radius: 15 });
+            obstacles.push({ x: 1800, type: "block", y: groundY - 80, width: 40, height: 80 });
+            obstacles.push({ x: 2100, type: "double-spike", width: 60, height: 40 });
+            coins.push({ x: 2130, y: groundY - 90 });
+            obstacles.push({ x: 2500, type: "block", y: groundY - 40, width: 120, height: 40 });
+            obstacles.push({ x: 2540, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 2900, y: groundY, radius: 15 });
+            obstacles.push({ x: 3200, type: "block", y: groundY - 120, width: 40, height: 120 });
+            obstacles.push({ x: 3600, type: "double-spike", width: 60, height: 40 });
+            obstacles.push({ x: 4000, type: "block", y: groundY - 40, width: 80, height: 40 });
+            obstacles.push({ x: 4040, type: "block", y: groundY - 80, width: 40, height: 40 });
+            obstacles.push({ x: 4400, type: "spike", width: 30, height: 40 });
+            coins.push({ x: 4400, y: groundY - 100 });
+        }
+    },
+    {
+        // Special placeholder entry inside the levels array to register Infinity Mode option inside Level Select loop
+        name: "INFINITY ENDLESS", difficulty: "Variable", bgColor: "#1f1f1f", floorColor: "#ffffff", length: Infinity, mode: "DYNAMIC", baseSpeed: 360,
+        setup: function() {
+            nextInfinityObstacleX = 600;
+            generateNextInfinityObstacle();
+            generateNextInfinityObstacle();
+            generateNextInfinityObstacle();
         }
     }
 ];
@@ -191,6 +251,35 @@ const player = {
         ctx.fillStyle = "#000"; ctx.fillRect(-10, 6, 20, 3); ctx.restore();
     }
 };
+
+// PROCEDURAL RANDOM GENERATOR FOR ENDLESS MODE
+function generateNextInfinityObstacle() {
+    let roll = Math.random();
+    let distanceGap = Math.random() * 250 + 300; // Keep elements cleanly separate
+
+    if (gameMode === "CUBE") {
+        if (roll < 0.35) {
+            obstacles.push({ x: nextInfinityObstacleX, type: Math.random() > 0.4 ? "spike" : "double-spike", width: 30, height: 40 });
+            if (Math.random() > 0.5) coins.push({ x: nextInfinityObstacleX, y: groundY - 100 });
+        } else if (roll < 0.70) {
+            let blockHeight = Math.random() > 0.5 ? 40 : 80;
+            obstacles.push({ x: nextInfinityObstacleX, type: "block", y: groundY - blockHeight, width: 60, height: blockHeight });
+            if (Math.random() > 0.5) coins.push({ x: nextInfinityObstacleX + 15, y: groundY - blockHeight - 50 });
+        } else {
+            pads.push({ x: nextInfinityObstacleX, y: groundY, radius: 15 });
+            obstacles.push({ x: nextInfinityObstacleX + 180, type: "double-spike", width: 60, height: 40 });
+        }
+    } else {
+        // SHIP MODE random walls
+        let gapY = Math.random() * 120 + 100; // safe space corridor height
+        let topWallHeight = Math.random() * 140 + 40;
+        obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40, width: 60, height: topWallHeight });
+        obstacles.push({ x: nextInfinityObstacleX, type: "block", y: 40 + topWallHeight + gapY, width: 60, height: groundY - (40 + topWallHeight + gapY) });
+        if (Math.random() > 0.4) coins.push({ x: nextInfinityObstacleX + 15, y: 40 + topWallHeight + (gapY / 2) - 10 });
+    }
+
+    nextInfinityObstacleX += distanceGap;
+}
 
 function handleShopClick(key) {
     let skin = skins[key];
@@ -278,9 +367,17 @@ function startLevel(index) {
 
 function resetLevel() {
     distanceTraveled = 0; frameCount = 0; isGameOver = false; isVictory = false; levelCoinsCollected = 0;
-    gameMode = currentLevel.mode; currentSpeed = currentLevel.baseSpeed;
+    
+    if (currentLevel.length === Infinity) {
+        gameMode = "CUBE"; // Start endless mode on foot
+        currentSpeed = currentLevel.baseSpeed;
+    } else {
+        gameMode = currentLevel.mode; 
+        currentSpeed = currentLevel.baseSpeed;
+    }
+
     player.y = groundY - player.height; player.velocity = 0; player.rotation = 0; player.grounded = true; particles = [];
-    obstacles = []; pads = []; coins = []; speedPortals = [];
+    obstacles = []; pads = []; coins = []; 
     currentLevel.setup(); 
     lastTime = performance.now();
 }
@@ -293,8 +390,37 @@ function update(dt) {
     distanceTraveled += moveAmount;
     let stoodOnSomething = false;
 
+    // INFINITY ENDLESS PROCEDURAL DISPATCH SYSTEM
+    if (currentLevel.length === Infinity) {
+        // Slowly increment speed to elevate pressure over runtime distance
+        currentSpeed = 360 + Math.floor(distanceTraveled / 150);
+        
+        // Alternate between plane navigation and standard physics modes dynamically every 2000 meters
+        let desiredMode = Math.floor(distanceTraveled / 2000) % 2 === 0 ? "CUBE" : "SHIP";
+        if (gameMode !== desiredMode) {
+            gameMode = desiredMode;
+            player.velocity = 0;
+        }
+
+        // Garbage collect off-screen array indices and regenerate oncoming objects
+        if (obstacles.length > 0 && obstacles[0].x < -200) obstacles.shift();
+        if (pads.length > 0 && pads[0].x < -200) pads.shift();
+        if (coins.length > 0 && coins[0].x < -200) coins.shift();
+
+        if (nextInfinityObstacleX - distanceTraveled < canvas.width + 300) {
+            generateNextInfinityObstacle();
+        }
+    }
+
+    // Collision checks loop
     for (let o of obstacles) {
-        o.x -= moveAmount;
+        if (currentLevel.length === Infinity) {
+            // Absolute screen offset mapping for endless mode components
+            o.x = (o.x === undefined) ? nextInfinityObstacleX : o.x - moveAmount;
+        } else {
+            o.x -= moveAmount;
+        }
+
         if (o.type === "block") {
             let hitX = player.x + 2 < o.x + o.width && player.x + player.width - 2 > o.x;
             let hitY = player.y < o.y + o.height && player.y + player.height > o.y;
@@ -316,19 +442,31 @@ function update(dt) {
 
     player.update(dt);
 
-    let progress = Math.min(100, Math.floor((distanceTraveled / currentLevel.length) * 100));
-    document.getElementById("scoreText").innerText = `PROGRESS: ${progress}% | 🟡 IN LEVEL: ${levelCoinsCollected}`;
-    let savedHighScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
-    document.getElementById("highScoreText").innerText = `BEST: ${savedHighScore}%`;
+    // Scoreboard metrics UI update statements
+    if (currentLevel.length === Infinity) {
+        let displayDist = Math.floor(distanceTraveled);
+        document.getElementById("scoreText").innerText = `SCORE: ${displayDist}m | 🟡 COINS: ${levelCoinsCollected}`;
+        document.getElementById("highScoreText").innerText = `BEST: ${infinityHighScore}m`;
+        
+        if (isGameOver && displayDist > infinityHighScore) {
+            infinityHighScore = displayDist;
+            localStorage.setItem("pepeInfinityBest", infinityHighScore);
+        }
+    } else {
+        let progress = Math.min(100, Math.floor((distanceTraveled / currentLevel.length) * 100));
+        document.getElementById("scoreText").innerText = `PROGRESS: ${progress}% | 🟡 IN LEVEL: ${levelCoinsCollected}`;
+        let savedHighScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
+        document.getElementById("highScoreText").innerText = `BEST: ${savedHighScore}%`;
 
-    if (isGameOver && progress > savedHighScore) localStorage.setItem(`pepeLevel_${currentLevelIndex}`, progress);
+        if (isGameOver && progress > savedHighScore) localStorage.setItem(`pepeLevel_${currentLevelIndex}`, progress);
 
-    if (distanceTraveled >= currentLevel.length) {
-        isVictory = true;
-        totalCoins += levelCoinsCollected; 
-        localStorage.setItem("pepeTotalCoins", totalCoins);
-        localStorage.setItem(`pepeLevel_${currentLevelIndex}`, 100);
-        return;
+        if (distanceTraveled >= currentLevel.length) {
+            isVictory = true;
+            totalCoins += levelCoinsCollected; 
+            localStorage.setItem("pepeTotalCoins", totalCoins);
+            localStorage.setItem(`pepeLevel_${currentLevelIndex}`, 100);
+            return;
+        }
     }
 
     for (let i = particles.length - 1; i >= 0; i--) {
@@ -346,7 +484,12 @@ function update(dt) {
     for (let i = coins.length - 1; i >= 0; i--) {
         let c = coins[i]; c.x -= moveAmount;
         if (player.x < c.x + 20 && player.x + player.width > c.x && player.y < c.y + 20 && player.y + player.height > c.y) {
-            levelCoinsCollected++; coins.splice(i, 1);
+            levelCoinsCollected++; 
+            if(currentLevel.length === Infinity) {
+                totalCoins++; // Endless gives bankable coins on the fly
+                localStorage.setItem("pepeTotalCoins", totalCoins);
+            }
+            coins.splice(i, 1);
         }
     }
 }
@@ -412,17 +555,22 @@ function draw() {
     else if (gameState === "LEVEL_SELECT") {
         statsBar.style.display = "none";
         ctx.fillStyle = "#070c1f"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#fff"; ctx.font = "bold 28px Arial"; ctx.fillText("SELECT LEVEL", 350, 100);
+        ctx.fillStyle = "#fff"; ctx.font = "bold 28px Arial"; ctx.fillText("SELECT LEVEL / MODE", 310, 100);
 
         let lvl = levels[currentLevelIndex];
         ctx.fillStyle = "#111a3a"; ctx.fillRect(250, 140, 400, 150);
         ctx.strokeStyle = "#00ffff"; ctx.strokeRect(250, 140, 400, 150);
 
         ctx.fillStyle = "#fff"; ctx.font = "18px Arial"; ctx.fillText(lvl.name, 270, 180);
-        ctx.fillStyle = lvl.difficulty === "Hard" ? "#ff3333" : (lvl.difficulty === "Normal" ? "#ffcc00" : "#33ff33");
+        ctx.fillStyle = lvl.difficulty === "Demon" || lvl.difficulty === "Insane" ? "#ff3333" : (lvl.difficulty === "Normal" || lvl.difficulty === "Hard" ? "#ffcc00" : "#33ff33");
         ctx.fillText(`Difficulty: ${lvl.difficulty}`, 270, 215);
-        let savedScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
-        ctx.fillStyle = "#00ffff"; ctx.fillText(`Best attempt: ${savedScore}%`, 270, 250);
+        
+        if (lvl.length === Infinity) {
+            ctx.fillStyle = "#ffd700"; ctx.fillText(`Best Score: ${infinityHighScore}m`, 270, 250);
+        } else {
+            let savedScore = localStorage.getItem(`pepeLevel_${currentLevelIndex}`) || 0;
+            ctx.fillStyle = "#00ffff"; ctx.fillText(`Best attempt: ${savedScore}%`, 270, 250);
+        }
 
         drawButton(buttons.prev); drawButton(buttons.next); drawButton(buttons.select, "#4CAF50"); drawButton(buttons.back, "#ff3333");
     } 
@@ -435,21 +583,19 @@ function draw() {
 
         for (let p of particles) { ctx.fillStyle = `rgba(78, 240, 93, ${p.alpha})`; ctx.fillRect(p.x, p.y, p.size, p.size); }
 
-        // --- DRAW FINISH LINE STRUCTURE ---
-        // Dynamically compute where the finish line renders relative to player movement
-        let finishLineX = (currentLevel.length - distanceTraveled) + player.x;
-        if (finishLineX < canvas.width + 100) {
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(finishLineX, 40, 30, groundY - 40); // Base vertical strip
-            // Render a checkered pattern onto the victory bar
-            ctx.fillStyle = "#000";
-            for (let yOffset = 40; yOffset < groundY; yOffset += 20) {
-                ctx.fillRect(finishLineX, yOffset, 15, 10);
-                ctx.fillRect(finishLineX + 15, yOffset + 10, 15, 10);
+        // --- DRAW FINISH LINE STRUCTURE (ONLY RENDER IF NOT IN ENDLESS MODE) ---
+        if (currentLevel.length !== Infinity) {
+            let finishLineX = (currentLevel.length - distanceTraveled) + player.x;
+            if (finishLineX < canvas.width + 100) {
+                ctx.fillStyle = "#fff"; ctx.fillRect(finishLineX, 40, 30, groundY - 40); 
+                ctx.fillStyle = "#000";
+                for (let yOffset = 40; yOffset < groundY; yOffset += 20) {
+                    ctx.fillRect(finishLineX, yOffset, 15, 10);
+                    ctx.fillRect(finishLineX + 15, yOffset + 10, 15, 10);
+                }
+                ctx.strokeStyle = "#33ff33"; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(finishLineX, 40); ctx.lineTo(finishLineX, groundY); ctx.stroke();
             }
-            // Draw a decorative neon glowing edge
-            ctx.strokeStyle = "#33ff33"; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(finishLineX, 40); ctx.lineTo(finishLineX, groundY); ctx.stroke();
         }
 
         for (let p of pads) {
@@ -477,6 +623,12 @@ function draw() {
         }
 
         player.draw();
+
+        // Mode notice banner during Endless mode phase shifts
+        if (currentLevel.length === Infinity) {
+            ctx.fillStyle = "rgba(255,255,255,0.15)"; ctx.font = "bold 14px Arial";
+            ctx.fillText(`MODE: ${gameMode}`, 50, 70);
+        }
 
         ctx.fillStyle = "#000"; ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY); ctx.fillRect(0, 0, canvas.width, 40);
         ctx.strokeStyle = currentLevel.floorColor; ctx.lineWidth = 3;
