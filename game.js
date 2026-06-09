@@ -58,28 +58,30 @@ window.addEventListener("resize", checkOrientation);
 window.addEventListener("orientationchange", checkOrientation);
 checkOrientation();
 
-// Level setup
+// Level setup - Lengths shortened and objects balanced right to the end
 const levels = [
     {
-        name: "1. STEREO MADNESS", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 4000, mode: "CUBE", baseSpeed: 350,
+        name: "1. STEREO MADNESS", difficulty: "Easy", bgColor: "#0f051d", floorColor: "#00ffff", length: 3500, mode: "CUBE", baseSpeed: 350,
         setup: function() {
             obstacles.push({ x: 600, type: "spike", width: 30, height: 40 });
             obstacles.push({ x: 1000, type: "block", y: groundY - 40, width: 80, height: 40 });
             obstacles.push({ x: 1400, type: "spike", width: 30, height: 40 });
             coins.push({ x: 1040, y: groundY - 90 }); 
             
-            pads.push({ x: 1900, y: groundY, radius: 15 });
-            obstacles.push({ x: 2100, type: "double-spike", width: 60, height: 40 });
+            pads.push({ x: 1800, y: groundY, radius: 15 });
+            obstacles.push({ x: 2000, type: "double-spike", width: 60, height: 40 });
             
-            obstacles.push({ x: 2600, type: "block", y: groundY - 40, width: 40, height: 40 });
-            obstacles.push({ x: 2640, type: "block", y: groundY - 80, width: 40, height: 40 });
-            coins.push({ x: 2640, y: groundY - 140 });
+            obstacles.push({ x: 2400, type: "block", y: groundY - 40, width: 40, height: 40 });
+            obstacles.push({ x: 2440, type: "block", y: groundY - 80, width: 40, height: 40 });
+            coins.push({ x: 2440, y: groundY - 140 });
             
-            obstacles.push({ x: 3200, type: "spike", width: 30, height: 40 });
+            // Final obstacles right before the finish
+            obstacles.push({ x: 2900, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 3100, type: "block", y: groundY - 40, width: 120, height: 40 });
         }
     },
     {
-        name: "2. TRAMPOLINE VALLEY", difficulty: "Normal", bgColor: "#05262b", floorColor: "#00ffcc", length: 4500, mode: "CUBE", baseSpeed: 380,
+        name: "2. TRAMPOLINE VALLEY", difficulty: "Normal", bgColor: "#05262b", floorColor: "#00ffcc", length: 3800, mode: "CUBE", baseSpeed: 380,
         setup: function() {
             pads.push({ x: 600, y: groundY, radius: 15 });
             obstacles.push({ x: 800, type: "spike", width: 30, height: 40 });
@@ -88,15 +90,19 @@ const levels = [
             pads.push({ x: 1360, y: groundY - 40, radius: 15 });
             coins.push({ x: 1360, y: groundY - 120 });
 
-            obstacles.push({ x: 2000, type: "double-spike", width: 60, height: 40 });
-            pads.push({ x: 2500, y: groundY, radius: 15 });
-            obstacles.push({ x: 2900, type: "block", y: groundY - 60, width: 80, height: 60 });
-            coins.push({ x: 2920, y: groundY - 120 });
-            obstacles.push({ x: 3600, type: "spike", width: 30, height: 40 });
+            obstacles.push({ x: 1900, type: "double-spike", width: 60, height: 40 });
+            pads.push({ x: 2300, y: groundY, radius: 15 });
+            obstacles.push({ x: 2700, type: "block", y: groundY - 60, width: 80, height: 60 });
+            coins.push({ x: 2720, y: groundY - 120 });
+            
+            // Final challenge stretch
+            obstacles.push({ x: 3100, type: "spike", width: 30, height: 40 });
+            pads.push({ x: 3300, y: groundY, radius: 15 });
+            obstacles.push({ x: 3450, type: "double-spike", width: 60, height: 40 });
         }
     },
     {
-        name: "3. SHIP FLIGHT", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 5000, mode: "SHIP", baseSpeed: 380,
+        name: "3. SHIP FLIGHT", difficulty: "Hard", bgColor: "#26052b", floorColor: "#ff00ff", length: 4200, mode: "SHIP", baseSpeed: 380,
         setup: function() {
             obstacles.push({ x: 700, type: "block", y: 40, width: 60, height: 140 });
             obstacles.push({ x: 1100, type: "block", y: groundY - 140, width: 60, height: 140 });
@@ -106,14 +112,18 @@ const levels = [
             obstacles.push({ x: 2100, type: "block", y: groundY - 180, width: 80, height: 180 });
             coins.push({ x: 1850, y: 250 });
 
-            obstacles.push({ x: 2800, type: "block", y: 120, width: 50, height: 120 });
-            obstacles.push({ x: 3400, type: "block", y: 40, width: 60, height: 140 });
-            obstacles.push({ x: 3900, type: "block", y: groundY - 140, width: 60, height: 140 });
+            obstacles.push({ x: 2600, type: "block", y: 120, width: 50, height: 120 });
+            obstacles.push({ x: 3100, type: "block", y: 40, width: 60, height: 140 });
+            obstacles.push({ x: 3500, type: "block", y: groundY - 140, width: 60, height: 140 });
+            
+            // Final obstacle tunnel
+            obstacles.push({ x: 3800, type: "block", y: 40, width: 40, height: 120 });
+            obstacles.push({ x: 3800, type: "block", y: groundY - 120, width: 40, height: 120 });
+            coins.push({ x: 3810, y: 200 });
         }
     }
 ];
 
-// UI Buttons
 const buttons = {
     play: { x: 350, y: 180, w: 200, h: 50, text: "START" },
     shopBtn: { x: 350, y: 250, w: 200, h: 50, text: "SHOP" },
@@ -424,6 +434,23 @@ function draw() {
         for (let x = -offset; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, groundY); ctx.stroke(); }
 
         for (let p of particles) { ctx.fillStyle = `rgba(78, 240, 93, ${p.alpha})`; ctx.fillRect(p.x, p.y, p.size, p.size); }
+
+        // --- DRAW FINISH LINE STRUCTURE ---
+        // Dynamically compute where the finish line renders relative to player movement
+        let finishLineX = (currentLevel.length - distanceTraveled) + player.x;
+        if (finishLineX < canvas.width + 100) {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(finishLineX, 40, 30, groundY - 40); // Base vertical strip
+            // Render a checkered pattern onto the victory bar
+            ctx.fillStyle = "#000";
+            for (let yOffset = 40; yOffset < groundY; yOffset += 20) {
+                ctx.fillRect(finishLineX, yOffset, 15, 10);
+                ctx.fillRect(finishLineX + 15, yOffset + 10, 15, 10);
+            }
+            // Draw a decorative neon glowing edge
+            ctx.strokeStyle = "#33ff33"; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(finishLineX, 40); ctx.lineTo(finishLineX, groundY); ctx.stroke();
+        }
 
         for (let p of pads) {
             ctx.fillStyle = "#ffcc00"; ctx.beginPath(); ctx.arc(p.x, p.y - 2, p.radius, 0, Math.PI, true); ctx.fill();
